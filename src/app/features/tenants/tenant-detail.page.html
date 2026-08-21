@@ -310,7 +310,7 @@
             <div class="routing-diagram">
               <div class="routing-box routing-box--input">Tenant<span>{{ t.key }}</span></div>
               <div class="routing-plus">+</div>
-              <div class="routing-box routing-box--input">Product<span>{{ t.productKeys[0] ?? '—' }}</span></div>
+              <div class="routing-box routing-box--input">Product<span>{{ t.productKeys[0] || '—' }}</span></div>
               <div class="routing-plus">+</div>
               <div class="routing-box routing-box--input">Environment<span>{{ t.environment }}</span></div>
               <div class="routing-arrow"><i class="pi pi-arrow-down" aria-hidden="true"></i></div>

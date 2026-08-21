@@ -1,0 +1,116 @@
+<div class="page">
+  <ctv-page-header
+    title="Entitlements"
+    subtitle="Define the capabilities, limits, quotas, and feature flags that define product features and plans."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn btn--primary" (click)="create()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create Entitlement
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="catalog-totals">
+    <div class="total-tile">
+      <span class="total-tile__value">{{ typeCounts().toggles }}</span>
+      <span class="total-tile__label">Feature Toggles</span>
+    </div>
+    <div class="total-tile">
+      <span class="total-tile__value">{{ typeCounts().quotas }}</span>
+      <span class="total-tile__label">Quotas</span>
+    </div>
+    <div class="total-tile">
+      <span class="total-tile__value">{{ typeCounts().limits }}</span>
+      <span class="total-tile__label">Limits</span>
+    </div>
+    <div class="total-tile">
+      <span class="total-tile__value">{{ typeCounts().configuration }}</span>
+      <span class="total-tile__label">Configurations</span>
+    </div>
+  </div>
+
+  <ctv-section-card padding="flush">
+    <ctv-data-table-toolbar
+      [(search)]="search"
+      searchPlaceholder="Search entitlements"
+      [filters]="filters()"
+      [filterValues]="filterValues()"
+      (filterChange)="onFilterChange($event)"
+      (filtersCleared)="clearFilters()"
+    />
+
+    <ctv-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [loading]="loading()"
+      rowNoun="entitlements"
+      minWidth="1080px"
+      defaultSortField="name"
+      emptyIcon="pi pi-shield"
+      emptyTitle="No entitlements match"
+      (rowClick)="open($any($event))"
+    >
+      <ng-template #cell let-row let-column="column">
+        @switch (column.key) {
+          @case ('name') {
+            <span class="cell-primary">{{ row.name }}</span>
+          }
+          @case ('key') {
+            <span class="chip chip--code">{{ row.key }}</span>
+          }
+          @case ('productName') {
+            <span>{{ row.productName }}</span>
+          }
+          @case ('type') {
+            <span class="chip">{{ row.type }}</span>
+          }
+          @case ('valueType') {
+            <span class="cell-sub">{{ row.valueType }}</span>
+          }
+          @case ('defaultValue') {
+            <span>{{ displayValue(row) }}</span>
+          }
+          @case ('planCount') {
+            <span class="td-num">{{ row.planCount }}</span>
+          }
+          @case ('status') {
+            <ctv-status-badge [status]="row.status" />
+          }
+          @default {
+            <span>{{ row[column.key] }}</span>
+          }
+        }
+      </ng-template>
+
+      <ng-template #rowActions let-row>
+        <ctv-row-actions [items]="rowMenu($any(row))" />
+      </ng-template>
+    </ctv-data-table>
+  </ctv-section-card>
+</div>
+
+<!-- ================= Entitlement drawer ================= -->
+<ctv-detail-drawer
+  [(visible)]="drawerOpen"
+  [title]="selected()?.name ?? 'Entitlement'"
+  [subtitle]="selected()?.productName ?? null"
+  eyebrow="Entitlement"
+  width="540px"
+>
+  @if (selected(); as entitlement) {
+    <div class="drawer-badges">
+      <ctv-status-badge [status]="entitlement.status" />
+      <span class="chip">{{ entitlement.type }}</span>
+      <span class="chip chip--code">{{ entitlement.key }}</span>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <ctv-definition-list [items]="detailItems()" [columns]="2" />
+    </div>
+
+    @if (entitlement.description) {
+      <p class="u-muted" style="margin-top: 1.5rem;">{{ entitlement.description }}</p>
+    }
+  }
+</ctv-detail-drawer>

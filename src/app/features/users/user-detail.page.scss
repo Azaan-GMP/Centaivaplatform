@@ -1,0 +1,137 @@
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  flex-wrap: wrap;
+}
+
+.identity__text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.identity__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.identity__name {
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+.identity__email {
+  font-size: var(--fs-md);
+  color: var(--text-secondary);
+}
+
+.identity__meta {
+  font-size: var(--fs-sm);
+  color: var(--text-tertiary);
+}
+
+.identity__stats {
+  display: flex;
+  gap: var(--space-7);
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .identity__stats {
+    padding-left: 0;
+    border-left: 0;
+    gap: var(--space-5);
+  }
+}
+
+.identity__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.identity__stat-value {
+  font-size: var(--fs-xl);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.identity__stat-label {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.access-summary {
+  display: flex;
+  flex-direction: column;
+}
+
+.access-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-subtle);
+  font-size: var(--fs-base);
+}
+
+.access-row:last-child {
+  border-bottom: 0;
+}
+
+.access-row__label {
+  color: var(--text-secondary);
+}
+
+.access-row__value {
+  font-weight: 600;
+}
+
+.permission-preview {
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.perm-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.product-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+
+.product-card__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  color: #1553b0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}

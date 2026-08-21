@@ -1,0 +1,208 @@
+/* =========================================================
+   PrimeNG alignment with the Centaiva design language
+   ========================================================= */
+
+.p-component {
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+}
+
+/* Inputs */
+.p-inputtext,
+.p-select,
+.p-multiselect,
+.p-datepicker-input,
+.p-inputnumber-input {
+  font-size: var(--fs-base);
+  border-radius: var(--radius-sm);
+}
+
+.p-select,
+.p-multiselect {
+  background: var(--surface-card);
+  border-color: var(--border-strong);
+  min-height: 36px;
+  align-items: center;
+}
+
+.p-select-label,
+.p-multiselect-label {
+  padding-block: 0;
+  display: flex;
+  align-items: center;
+  font-size: var(--fs-base);
+}
+
+.p-select:not(.p-disabled).p-focus,
+.p-multiselect:not(.p-disabled).p-focus,
+.p-inputtext:enabled:focus {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.p-select-option,
+.p-multiselect-option {
+  font-size: var(--fs-base);
+  padding: 7px 12px;
+}
+
+.p-select-option.p-select-option-selected,
+.p-multiselect-option.p-multiselect-option-selected {
+  background: var(--color-primary-soft);
+  color: #1553b0;
+}
+
+.p-select-overlay,
+.p-multiselect-overlay,
+.p-datepicker-panel,
+.p-popover,
+.p-menu {
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Filter selects in toolbars */
+.filter-select.p-select,
+.filter-select.p-multiselect {
+  min-width: 158px;
+  height: 34px;
+  min-height: 34px;
+  font-size: var(--fs-sm);
+}
+
+/* Dialog */
+.p-dialog {
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+}
+
+.p-dialog .p-dialog-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.p-dialog .p-dialog-title {
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.p-dialog .p-dialog-content { padding: var(--space-5); }
+
+.p-dialog .p-dialog-footer {
+  padding: var(--space-3) var(--space-5);
+  border-top: 1px solid var(--border-subtle);
+  background: var(--surface-sunken);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+  gap: var(--space-2);
+}
+
+.p-dialog-mask { backdrop-filter: blur(1px); }
+
+/* Drawer */
+.p-drawer {
+  border-left: 1px solid var(--border-default);
+  box-shadow: var(--shadow-lg);
+}
+.p-drawer .p-drawer-header {
+  padding: var(--space-4) var(--space-5);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.p-drawer .p-drawer-content { padding: 0; }
+
+/* Menu */
+.p-menu {
+  padding: var(--space-1);
+  min-width: 190px;
+}
+.p-menu .p-menu-item-link {
+  padding: 7px 10px;
+  border-radius: var(--radius-sm);
+  font-size: var(--fs-base);
+  gap: var(--space-2);
+}
+.p-menu .p-menu-item-icon { font-size: 13px; color: var(--text-secondary); }
+.p-menu .p-menu-submenu-label {
+  padding: 6px 10px 4px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.p-menu-item.menu-item-danger .p-menu-item-link,
+.p-menu-item.menu-item-danger .p-menu-item-icon { color: var(--color-danger); }
+
+/* Tooltip */
+.p-tooltip .p-tooltip-text {
+  font-size: var(--fs-sm);
+  padding: 5px 9px;
+  border-radius: var(--radius-sm);
+  background: #1f2937;
+  box-shadow: var(--shadow-md);
+}
+.p-tooltip .p-tooltip-arrow { border-top-color: #1f2937; border-right-color: #1f2937; border-bottom-color: #1f2937; border-left-color: #1f2937; }
+
+/* Toast */
+.p-toast { width: 380px; }
+.p-toast .p-toast-message {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  border-width: 1px;
+}
+.p-toast .p-toast-message-content { padding: var(--space-3) var(--space-4); gap: var(--space-3); }
+.p-toast-summary { font-size: var(--fs-base); font-weight: 600; }
+.p-toast-detail { font-size: var(--fs-sm); margin-top: 2px; }
+
+/* Tree */
+.p-tree {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.p-tree .p-tree-node-content {
+  padding: 5px 8px;
+  border-radius: var(--radius-sm);
+  gap: 4px;
+  transition: background-color 0.12s ease;
+}
+.p-tree .p-tree-node-content:hover { background: var(--surface-hover); }
+.p-tree .p-tree-node-content.p-tree-node-selected {
+  background: var(--color-primary-soft);
+  color: #1553b0;
+}
+.p-tree .p-tree-node-label { font-size: var(--fs-base); min-width: 0; }
+.p-tree .p-tree-node-toggle-button { width: 20px; height: 20px; }
+.p-tree .p-tree-node-children { padding-inline-start: 14px; }
+.p-tree-root-children > .p-tree-node > .p-tree-node-content { font-weight: 600; }
+
+/* Checkbox / switch */
+.p-checkbox { width: 16px; height: 16px; }
+.p-checkbox .p-checkbox-box { width: 16px; height: 16px; border-radius: var(--radius-xs); }
+.p-checkbox-checked .p-checkbox-box { background: var(--color-primary); border-color: var(--color-primary); }
+
+.p-toggleswitch-checked .p-toggleswitch-slider { background: var(--color-primary); }
+
+/* Progress bar */
+.p-progressbar { height: 6px; border-radius: var(--radius-pill); background: var(--surface-sunken); }
+.p-progressbar .p-progressbar-value { background: var(--color-primary); border-radius: var(--radius-pill); }
+
+/* Buttons kept minimal — Centaiva uses .btn */
+.p-button { font-size: var(--fs-base); border-radius: var(--radius-sm); }
+
+/* Tag */
+.p-tag { border-radius: var(--radius-pill); font-size: var(--fs-xs); font-weight: 600; padding: 2px 9px; }
+
+/* Confirm dialog */
+.p-confirmdialog { max-width: 440px; }
+.p-confirmdialog .p-confirmdialog-message { font-size: var(--fs-md); color: var(--text-secondary); }
+
+/* Stepper */
+.p-stepper .p-steplist { padding: 0; }
+.p-step-title { font-size: var(--fs-base); font-weight: 500; }
+.p-step-active .p-step-title { color: var(--color-primary); font-weight: 600; }
+.p-steppanels { background: transparent; padding: 0; }
+.p-steppanel { background: transparent; }

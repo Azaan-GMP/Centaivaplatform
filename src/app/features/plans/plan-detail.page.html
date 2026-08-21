@@ -1,0 +1,235 @@
+@if (loading()) {
+  <div class="page">
+    <div class="card"><div class="card__body"><ctv-loading-skeleton [rowCount]="5" /></div></div>
+  </div>
+} @else if (!plan()) {
+  <div class="page">
+    <ctv-empty-state icon="pi pi-tags" title="Plan not found" message="This plan may have been retired.">
+      <button type="button" class="btn btn--primary" (click)="back()">Back to plans</button>
+    </ctv-empty-state>
+  </div>
+} @else if (plan(); as p) {
+  <div class="page">
+    <ctv-page-header
+      [title]="p.productName + ' — ' + p.name"
+      [subtitle]="p.description"
+      [crumbs]="[{ label: 'Plans', link: '/app/plans' }, { label: p.productName + ' ' + p.name }]"
+    >
+      <div slot="actions" class="btn-group">
+        <a class="btn" [routerLink]="['/app/subscriptions']">
+          <i class="pi pi-credit-card" aria-hidden="true"></i>
+          View subscriptions
+        </a>
+        <button type="button" class="btn btn--primary" (click)="createVersion()">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Create Version
+        </button>
+      </div>
+    </ctv-page-header>
+
+    <section class="plan-head card">
+      <div class="plan-head__price">
+        <span class="plan-head__amount">{{ p.currency === 'GBP' ? '£' : '$' }}{{ p.pricePerSeat }}</span>
+        <span class="plan-head__unit">per seat / {{ p.billingCycle === 'Annual' ? 'year' : 'month' }}</span>
+      </div>
+      <div class="plan-head__divider" aria-hidden="true"></div>
+      <div class="plan-head__stats">
+        <div class="plh-stat"><span class="plh-stat__value">v{{ p.currentVersion }}</span><span class="plh-stat__label">Current version</span></div>
+        <div class="plh-stat"><span class="plh-stat__value">{{ p.baseSeats }}</span><span class="plh-stat__label">Base seats</span></div>
+        <div class="plh-stat"><span class="plh-stat__value">{{ p.subscriptionCount }}</span><span class="plh-stat__label">Subscriptions</span></div>
+        <div class="plh-stat"><span class="plh-stat__value">{{ p.entitlements.length }}</span><span class="plh-stat__label">Entitlements</span></div>
+      </div>
+      <div class="plan-head__badges">
+        <ctv-status-badge [status]="p.status" />
+        <span class="chip chip--code">{{ p.key }}</span>
+      </div>
+    </section>
+
+    <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="Plan sections" />
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Plan definition">
+            <ctv-definition-list [items]="overviewItems()" />
+          </ctv-section-card>
+
+          <ctv-section-card title="What this plan includes">
+            <ul class="highlights">
+              @for (highlight of p.highlights; track highlight) {
+                <li><i class="pi pi-check-circle" aria-hidden="true"></i> {{ highlight }}</li>
+              }
+            </ul>
+
+            <div class="u-mt-6">
+              <span class="eyebrow">Headline entitlements</span>
+              <div class="kv-rows u-mt-2">
+                @for (entitlement of p.entitlements.slice(0, 6); track entitlement.entitlementKey) {
+                  <div class="kv-row">
+                    <span class="kv-row__label">{{ entitlement.entitlementName }}</span>
+                    <span class="kv-row__value">
+                      @if (entitlement.unlimited) {
+                        <span class="badge badge--primary">Unlimited</span>
+                      } @else if (entitlement.valueType === 'Boolean') {
+                        <ctv-status-badge [status]="entitlement.value === 'true' ? 'Enabled' : 'Disabled'" [dot]="false" />
+                      } @else {
+                        {{ entitlement.value }}
+                      }
+                    </span>
+                  </div>
+                }
+              </div>
+            </div>
+          </ctv-section-card>
+        </div>
+      }
+
+      @case ('versions') {
+        <ctv-section-card
+          title="Plan versions"
+          description="Subscriptions pin to a version so pricing and entitlements stay stable"
+          padding="flush"
+        >
+          <button slot="actions" type="button" class="btn btn--sm btn--primary" (click)="createVersion()">
+            <i class="pi pi-plus" aria-hidden="true"></i>
+            Create Version
+          </button>
+
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Version</th>
+                  <th>Status</th>
+                  <th>Effective from</th>
+                  <th>Created by</th>
+                  <th class="td-num">Subscriptions</th>
+                  <th>Notes</th>
+                  <th class="td-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (version of p.versions; track version.id) {
+                  <tr>
+                    <td class="cell-primary">v{{ version.version }}</td>
+                    <td><ctv-status-badge [status]="version.status" /></td>
+                    <td class="cell-sub">{{ version.effectiveFrom | date: 'dd MMM yyyy' }}</td>
+                    <td class="cell-sub">{{ version.createdBy }}</td>
+                    <td class="td-num">{{ version.subscriptionCount }}</td>
+                    <td class="cell-sub">{{ version.notes }}</td>
+                    <td class="td-actions">
+                      @if (version.status === 'Draft') {
+                        <button type="button" class="btn btn--sm btn--subtle" (click)="publish(version.id)">Publish</button>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('entitlements') {
+        <ctv-section-card
+          title="Entitlements"
+          [description]="'Resolved values for version ' + p.currentVersion"
+          padding="flush"
+        >
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Entitlement</th>
+                  <th>Key</th>
+                  <th>Value type</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entitlement of p.entitlements; track entitlement.entitlementKey) {
+                  <tr>
+                    <td class="cell-primary">{{ entitlement.entitlementName }}</td>
+                    <td><span class="chip chip--code">{{ entitlement.entitlementKey }}</span></td>
+                    <td class="cell-sub">{{ entitlement.valueType }}</td>
+                    <td>
+                      @if (entitlement.unlimited) {
+                        <span class="badge badge--primary">Unlimited</span>
+                      } @else if (entitlement.valueType === 'Boolean') {
+                        <ctv-status-badge [status]="entitlement.value === 'true' ? 'Enabled' : 'Disabled'" [dot]="false" />
+                      } @else {
+                        <span class="u-strong">{{ entitlement.value }}</span>
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('subscriptions') {
+        <ctv-section-card title="Subscriptions on this plan" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Tenant</th>
+                  <th>Status</th>
+                  <th class="td-num">Seats</th>
+                  <th>Period end</th>
+                  <th>Auto renew</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (subscription of planSubscriptions(); track subscription.id) {
+                  <tr class="is-clickable" [routerLink]="['/app/subscriptions', subscription.id]">
+                    <td><span class="chip chip--code">{{ subscription.reference }}</span></td>
+                    <td class="cell-primary">{{ subscription.tenantName }}</td>
+                    <td><ctv-status-badge [status]="subscription.status" /></td>
+                    <td class="td-num">{{ subscription.seatsUsed }}/{{ subscription.seats }}</td>
+                    <td class="cell-sub">{{ subscription.periodEnd | date: 'dd MMM yyyy' }}</td>
+                    <td><ctv-status-badge [status]="subscription.autoRenew ? 'Active' : 'Disabled'" [dot]="false" /></td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6"><span class="u-dim">No subscriptions on this plan.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('audit') {
+        <ctv-section-card title="Audit history" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px">When</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th style="width: 110px">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (event of auditEvents(); track event.id) {
+                  <tr>
+                    <td class="cell-sub">{{ event.timestamp | relativeTime }}</td>
+                    <td class="u-truncate">{{ event.actorName }}</td>
+                    <td><span class="chip chip--code">{{ event.action }}</span></td>
+                    <td class="cell-sub u-truncate">{{ event.entityName }}</td>
+                    <td><ctv-status-badge [status]="event.outcome" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+    }
+  </div>
+}

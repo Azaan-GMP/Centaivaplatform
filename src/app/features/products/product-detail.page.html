@@ -1,0 +1,387 @@
+@if (loading()) {
+  <div class="page">
+    <div class="card"><div class="card__body"><ctv-loading-skeleton [rowCount]="5" /></div></div>
+  </div>
+} @else if (!product()) {
+  <div class="page">
+    <ctv-empty-state icon="pi pi-box" title="Product not found" message="This product may have been retired.">
+      <button type="button" class="btn btn--primary" (click)="back()">Back to products</button>
+    </ctv-empty-state>
+  </div>
+} @else if (product(); as p) {
+  <div class="page">
+    <ctv-page-header
+      [title]="p.name"
+      [subtitle]="p.description"
+      [crumbs]="[{ label: 'Products', link: '/app/products' }, { label: p.name }]"
+    >
+      <div slot="actions" class="btn-group">
+        <a class="btn" routerLink="/app/catalog">
+          <i class="pi pi-th-large" aria-hidden="true"></i>
+          Open catalog
+        </a>
+        <a class="btn btn--primary" routerLink="/app/plans">
+          <i class="pi pi-tags" aria-hidden="true"></i>
+          Manage plans
+        </a>
+      </div>
+    </ctv-page-header>
+
+    <section class="product-head card">
+      <span class="product-head__mark" [style.background]="p.iconAccent">{{ p.name.charAt(0) }}</span>
+      <div class="product-head__text">
+        <div class="product-head__row">
+          <h2 class="product-head__name">{{ p.name }}</h2>
+          <ctv-status-badge [status]="p.status" />
+          <span class="chip chip--code">{{ p.key }}</span>
+          <span class="chip">v{{ p.version }}</span>
+        </div>
+        <p class="u-muted">{{ p.description }}</p>
+      </div>
+      <div class="product-head__stats">
+        <div class="ph-stat"><span class="ph-stat__value">{{ p.applicationCount }}</span><span class="ph-stat__label">Applications</span></div>
+        <div class="ph-stat"><span class="ph-stat__value">{{ p.moduleCount }}</span><span class="ph-stat__label">Modules</span></div>
+        <div class="ph-stat"><span class="ph-stat__value">{{ p.featureCount }}</span><span class="ph-stat__label">Features</span></div>
+        <div class="ph-stat"><span class="ph-stat__value">{{ p.permissionCount }}</span><span class="ph-stat__label">Permissions</span></div>
+        <div class="ph-stat"><span class="ph-stat__value">{{ p.tenantCount }}</span><span class="ph-stat__label">Tenants</span></div>
+      </div>
+    </section>
+
+    <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="Product sections" />
+
+    @switch (activeTab()) {
+      @case ('overview') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Product registry" description="Catalogue attributes for this product">
+            <ctv-definition-list [items]="overviewItems()" />
+          </ctv-section-card>
+
+          <div class="stack">
+            <ctv-section-card title="Commercial position">
+              <ctv-metric-progress
+                label="Seats assigned across subscriptions"
+                [used]="seatPosition().used"
+                [total]="seatPosition().total"
+                size="lg"
+              />
+              <div class="kv-rows u-mt-4">
+                <div class="kv-row">
+                  <span class="kv-row__label">Plans published</span>
+                  <span class="kv-row__value">{{ productPlans().length }}</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Active subscriptions</span>
+                  <span class="kv-row__value">{{ productSubscriptions().length }}</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Entitlements defined</span>
+                  <span class="kv-row__value">{{ productEntitlements().length }}</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Deployments</span>
+                  <span class="kv-row__value">{{ productDeployments().length }}</span>
+                </div>
+              </div>
+            </ctv-section-card>
+
+            <ctv-section-card title="Catalog shape" description="How this product decomposes">
+              <div class="shape">
+                <div class="shape__row"><span class="shape__label">Product</span><span class="shape__value">{{ p.name }}</span></div>
+                <div class="shape__row shape__row--indent-1"><span class="shape__label">Applications</span><span class="shape__value">{{ p.applicationCount }}</span></div>
+                <div class="shape__row shape__row--indent-2"><span class="shape__label">Modules</span><span class="shape__value">{{ p.moduleCount }}</span></div>
+                <div class="shape__row shape__row--indent-3"><span class="shape__label">Features</span><span class="shape__value">{{ p.featureCount }}</span></div>
+                <div class="shape__row shape__row--indent-4"><span class="shape__label">Permissions</span><span class="shape__value">{{ p.permissionCount }}</span></div>
+              </div>
+            </ctv-section-card>
+          </div>
+        </div>
+      }
+
+      @case ('applications') {
+        <ctv-section-card title="Applications" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Application</th>
+                  <th>Key</th>
+                  <th>Type</th>
+                  <th>Base URL</th>
+                  <th class="td-num">Modules</th>
+                  <th class="td-num">Features</th>
+                  <th class="td-num">Permissions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (application of productApplications(); track application.id) {
+                  <tr>
+                    <td class="cell-primary">{{ application.name }}</td>
+                    <td><span class="chip chip--code">{{ application.key }}</span></td>
+                    <td>{{ application.type }}</td>
+                    <td class="cell-sub u-truncate">{{ application.baseUrl }}</td>
+                    <td class="td-num">{{ application.moduleCount }}</td>
+                    <td class="td-num">{{ application.featureCount }}</td>
+                    <td class="td-num">{{ application.permissionCount }}</td>
+                    <td><ctv-status-badge [status]="application.status" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('modules') {
+        <ctv-section-card title="Modules" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Module</th>
+                  <th>Key</th>
+                  <th>Description</th>
+                  <th class="td-num">Features</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (module of modules(); track module.id) {
+                  <tr>
+                    <td class="cell-primary">{{ module.name }}</td>
+                    <td><span class="chip chip--code">{{ module.key }}</span></td>
+                    <td class="cell-sub">{{ module.description }}</td>
+                    <td class="td-num">{{ module.features.length }}</td>
+                    <td><ctv-status-badge [status]="module.status" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('features') {
+        <ctv-section-card title="Features" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>Key</th>
+                  <th>Module</th>
+                  <th class="td-num">Permissions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (feature of features(); track feature.id) {
+                  <tr>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="cell-primary">{{ feature.name }}</span>
+                        <span class="cell-sub">{{ feature.description }}</span>
+                      </span>
+                    </td>
+                    <td><span class="chip chip--code">{{ feature.key }}</span></td>
+                    <td class="cell-sub">{{ moduleNameFor(feature) }}</td>
+                    <td class="td-num">{{ feature.permissions.length }}</td>
+                    <td><ctv-status-badge [status]="feature.status" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('permissions') {
+        <ctv-section-card title="Permissions" description="Every permission this product exposes to roles" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Permission</th>
+                  <th>Name</th>
+                  <th>Feature</th>
+                  <th>Risk</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (permission of permissions(); track permission.id) {
+                  <tr>
+                    <td><span class="chip chip--code">{{ permission.key }}</span></td>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="cell-primary">{{ permission.name }}</span>
+                        <span class="cell-sub">{{ permission.description }}</span>
+                      </span>
+                    </td>
+                    <td class="cell-sub">{{ featureNameFor(permission) }}</td>
+                    <td><ctv-status-badge [status]="permission.risk" [dot]="false" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('plans') {
+        <div class="grid grid--auto-lg">
+          @for (plan of productPlans(); track plan.id) {
+            <div class="card plan-tile" [routerLink]="['/app/plans', plan.id]">
+              <div class="card__body">
+                <div class="plan-tile__head">
+                  <span class="cell-primary">{{ plan.name }}</span>
+                  <ctv-status-badge [status]="plan.status" />
+                </div>
+                <p class="cell-sub">{{ plan.description }}</p>
+                <div class="plan-tile__meta">
+                  <span class="chip">v{{ plan.currentVersion }}</span>
+                  <span class="chip">{{ plan.baseSeats }} seats</span>
+                  <span class="chip">{{ plan.currency }} {{ plan.pricePerSeat }}/seat</span>
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <ctv-empty-state icon="pi pi-tags" title="No plans" message="No commercial plans are published for this product." />
+          }
+        </div>
+      }
+
+      @case ('entitlements') {
+        <ctv-section-card title="Entitlements" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Entitlement</th>
+                  <th>Key</th>
+                  <th>Type</th>
+                  <th>Value type</th>
+                  <th>Default</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entitlement of productEntitlements(); track entitlement.id) {
+                  <tr>
+                    <td class="cell-primary">{{ entitlement.name }}</td>
+                    <td><span class="chip chip--code">{{ entitlement.key }}</span></td>
+                    <td>{{ entitlement.type }}</td>
+                    <td class="cell-sub">{{ entitlement.valueType }}</td>
+                    <td class="u-strong">{{ entitlement.defaultValue }}{{ entitlement.unit ? ' ' + entitlement.unit : '' }}</td>
+                    <td><ctv-status-badge [status]="entitlement.status" /></td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6"><span class="u-dim">No entitlements defined.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('meters') {
+        <ctv-section-card title="Usage meters" description="Metered dimensions billed or capped for this product" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Meter</th>
+                  <th>Key</th>
+                  <th>Unit</th>
+                  <th>Aggregation</th>
+                  <th>Reset period</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (meter of p.meters; track meter.id) {
+                  <tr>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="cell-primary">{{ meter.name }}</span>
+                        <span class="cell-sub">{{ meter.description }}</span>
+                      </span>
+                    </td>
+                    <td><span class="chip chip--code">{{ meter.key }}</span></td>
+                    <td>{{ meter.unit }}</td>
+                    <td>{{ meter.aggregation }}</td>
+                    <td>{{ meter.resetPeriod }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5"><span class="u-dim">No meters defined.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('subscriptions') {
+        <ctv-section-card title="Subscriptions" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Tenant</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th class="td-num">Seats</th>
+                  <th>Period end</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (subscription of productSubscriptions().slice(0, 20); track subscription.id) {
+                  <tr class="is-clickable" [routerLink]="['/app/subscriptions', subscription.id]">
+                    <td><span class="chip chip--code">{{ subscription.reference }}</span></td>
+                    <td class="cell-primary">{{ subscription.tenantName }}</td>
+                    <td>{{ subscription.planName }}</td>
+                    <td><ctv-status-badge [status]="subscription.status" /></td>
+                    <td class="td-num">{{ subscription.seatsUsed }}/{{ subscription.seats }}</td>
+                    <td class="cell-sub">{{ subscription.periodEnd | date: 'dd MMM yyyy' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      @case ('deployments') {
+        <ctv-section-card title="Deployments" description="Regional deployments serving this product" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Deployment</th>
+                  <th>Region</th>
+                  <th>Environment</th>
+                  <th>Version</th>
+                  <th class="td-num">Tenants</th>
+                  <th>Status</th>
+                  <th>Last release</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (deployment of productDeployments(); track deployment.id) {
+                  <tr>
+                    <td class="cell-primary u-truncate">{{ deployment.name }}</td>
+                    <td class="cell-sub">{{ deployment.region }}</td>
+                    <td><span class="chip">{{ deployment.environment }}</span></td>
+                    <td class="u-mono">{{ deployment.version }}</td>
+                    <td class="td-num">{{ deployment.tenantCount }}</td>
+                    <td><ctv-status-badge [status]="deployment.status" /></td>
+                    <td class="cell-sub">{{ deployment.lastReleasedAt | relativeTime }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+    }
+  </div>
+}

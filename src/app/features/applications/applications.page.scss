@@ -1,0 +1,20 @@
+.app-cell { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+
+.app-cell__icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  flex: none;
+  background: var(--color-neutral-soft);
+  color: var(--text-secondary);
+}
+
+.app-cell__icon--web { background: var(--color-primary-soft); color: #1553b0; }
+.app-cell__icon--api { background: var(--color-purple-soft); color: #6027d0; }
+.app-cell__icon--service { background: var(--color-info-soft); color: #0e7490; }
+
+.drawer-badges { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }

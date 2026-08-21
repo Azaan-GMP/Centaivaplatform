@@ -1,0 +1,103 @@
+<div class="page">
+  <ctv-page-header
+    title="Plans"
+    subtitle="Commercial packaging for each product. Plans are versioned; entitlements resolve from the published version."
+  >
+    <button slot="actions" type="button" class="btn btn--primary" (click)="createPlan()">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+      Create Plan
+    </button>
+  </ctv-page-header>
+
+  <div class="plan-totals">
+    <div class="total-tile"><span class="total-tile__value">{{ totals().plans }}</span><span class="total-tile__label">Plans</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().published }}</span><span class="total-tile__label">Active</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().drafts }}</span><span class="total-tile__label">Draft versions</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().subscriptions }}</span><span class="total-tile__label">Subscriptions</span></div>
+  </div>
+
+  <ctv-section-card padding="tight">
+    <ctv-data-table-toolbar
+      [(search)]="search"
+      searchPlaceholder="Search plans"
+      [filters]="filters()"
+      [filterValues]="filterValues()"
+      (filterChange)="onFilterChange($event)"
+      (filtersCleared)="clearFilters()"
+    />
+  </ctv-section-card>
+
+  @if (loading()) {
+    <div class="grid grid--4">
+      @for (placeholder of [1, 2, 3, 4]; track placeholder) {
+        <div class="card" style="height: 260px; padding: 20px">
+          <div class="skeleton" style="height: 14px; width: 50%; margin-bottom: 16px"></div>
+          <div class="skeleton" style="height: 28px; width: 70%; margin-bottom: 20px"></div>
+          <div class="skeleton" style="height: 10px; margin-bottom: 8px"></div>
+          <div class="skeleton" style="height: 10px; width: 80%"></div>
+        </div>
+      }
+    </div>
+  } @else {
+    @for (group of grouped(); track group.productName) {
+      <section class="plan-group">
+        <div class="plan-group__head">
+          <h2 class="section-title">{{ group.productName }}</h2>
+          <span class="section-subtitle">{{ group.plans.length }} plan(s)</span>
+        </div>
+
+        <div class="grid grid--4">
+          @for (plan of group.plans; track plan.id) {
+            <article
+              class="plan-card"
+              [class.plan-card--featured]="plan.tier === 'Business'"
+              (click)="view(plan)"
+              tabindex="0"
+              (keydown.enter)="view(plan)"
+            >
+              @if (plan.tier === 'Business') {
+                <span class="plan-card__ribbon">Most adopted</span>
+              }
+
+              <div class="plan-card__head">
+                <span class="plan-card__tier">{{ plan.name }}</span>
+                <ctv-status-badge [status]="plan.status" />
+              </div>
+
+              <div class="plan-card__price">
+                <span class="plan-card__amount">{{ plan.currency === 'GBP' ? '£' : '$' }}{{ plan.pricePerSeat }}</span>
+                <span class="plan-card__unit">per seat / {{ plan.billingCycle === 'Annual' ? 'year' : 'month' }}</span>
+              </div>
+
+              <dl class="plan-card__facts">
+                <div><dt>Product</dt><dd>{{ plan.productName }}</dd></div>
+                <div><dt>Plan key</dt><dd class="u-mono">{{ plan.key }}</dd></div>
+                <div><dt>Current version</dt><dd>v{{ plan.currentVersion }}</dd></div>
+                <div><dt>Base seats</dt><dd>{{ plan.baseSeats }}</dd></div>
+                <div><dt>Subscriptions</dt><dd>{{ plan.subscriptionCount }}</dd></div>
+              </dl>
+
+              <ul class="plan-card__highlights">
+                @for (highlight of plan.highlights; track highlight) {
+                  <li><i class="pi pi-check" aria-hidden="true"></i> {{ highlight }}</li>
+                }
+              </ul>
+
+              <div class="plan-card__actions">
+                <button type="button" class="btn btn--sm" (click)="view(plan)">View</button>
+                <button type="button" class="btn btn--sm" (click)="edit(plan, $event)">Edit</button>
+                <button type="button" class="btn btn--sm btn--subtle" (click)="createVersion(plan, $event)">
+                  Create Version
+                </button>
+              </div>
+            </article>
+          }
+        </div>
+      </section>
+    } @empty {
+      <div class="card">
+        <div class="card__body u-text-center u-muted">No plans match the current filters.</div>
+      </div>
+    }
+  }
+</div>

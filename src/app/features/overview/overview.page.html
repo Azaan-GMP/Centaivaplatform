@@ -1,0 +1,173 @@
+<div class="page">
+  <ctv-page-header
+    title="Platform Overview"
+    subtitle="Monitor users, tenants, products, licensing and platform operations."
+  >
+    <div slot="actions" class="btn-group">
+      <a class="btn" routerLink="/app/audit">
+        <i class="pi pi-history" aria-hidden="true"></i>
+        View audit log
+      </a>
+      <a class="btn btn--primary" routerLink="/app/onboarding">
+        <i class="pi pi-sparkles" aria-hidden="true"></i>
+        Onboard customer
+      </a>
+    </div>
+  </ctv-page-header>
+
+  <!-- ================= KPIs ================= -->
+  <section class="grid grid--6" aria-label="Key platform metrics">
+    @for (kpi of kpis(); track kpi.id) {
+      <ctv-stat-card
+        [label]="kpi.label"
+        [value]="kpi.value"
+        [icon]="kpi.icon"
+        [accent]="kpi.accent ?? 'primary'"
+        [trend]="kpi.trend ?? null"
+        [trendLabel]="kpi.trendLabel ?? null"
+        [series]="kpi.series ?? []"
+      />
+    }
+    @if (loading()) {
+      @for (placeholder of [1, 2, 3, 4, 5, 6]; track placeholder) {
+        <div class="card" style="height: 118px; padding: 16px">
+          <div class="skeleton" style="height: 10px; width: 45%; margin-bottom: 14px"></div>
+          <div class="skeleton" style="height: 24px; width: 60%"></div>
+        </div>
+      }
+    }
+  </section>
+
+  <!-- ================= Charts ================= -->
+  <section class="grid grid--2" aria-label="Growth trends">
+    <ctv-section-card title="Tenant Growth" description="Active tenants over the last 12 months">
+      <span slot="actions" class="chip">12 months</span>
+      <ctv-line-chart [data]="tenantGrowth()" color="#1a73e8" ariaLabel="Tenant growth over 12 months" />
+    </ctv-section-card>
+
+    <ctv-section-card title="User Growth" description="Distinct active users signing in each month">
+      <span slot="actions" class="chip">12 months</span>
+      <ctv-line-chart [data]="userGrowth()" color="#34a853" ariaLabel="User growth over 12 months" />
+    </ctv-section-card>
+  </section>
+
+  <section class="grid grid--2" aria-label="Commercial distribution">
+    <ctv-section-card title="Subscription Distribution" description="Active subscriptions by plan tier">
+      <ctv-donut-chart [data]="subscriptionDistribution()" centerLabel="Subscriptions" />
+    </ctv-section-card>
+
+    <ctv-section-card title="License Utilization" description="Assigned seats against issued capacity by product">
+      <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/licenses">
+        Manage licences
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </a>
+      <div class="util-list">
+        @for (entry of licenseUtilization(); track entry.label) {
+          <ctv-metric-progress
+            [label]="entry.label"
+            [used]="entry.used"
+            [total]="entry.total"
+            size="lg"
+          />
+        }
+      </div>
+    </ctv-section-card>
+  </section>
+
+  <!-- ================= Health ================= -->
+  <ctv-section-card
+    title="Platform Health"
+    description="Live status of the control plane subsystems"
+    padding="tight"
+  >
+    <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/system/diagnostics">
+      Full diagnostics
+      <i class="pi pi-arrow-right" aria-hidden="true"></i>
+    </a>
+    <div class="grid grid--3">
+      @for (signal of health(); track signal.id) {
+        <ctv-health-tile [data]="signal" />
+      }
+    </div>
+  </ctv-section-card>
+
+  <!-- ================= Activity + provisioning ================= -->
+  <section class="overview-split">
+    <ctv-section-card title="Recent Activity" description="Latest platform audit events" padding="flush">
+      <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/audit">
+        View all
+        <i class="pi pi-arrow-right" aria-hidden="true"></i>
+      </a>
+
+      <div class="table-wrap">
+        <table class="ctv-table">
+          <thead>
+            <tr>
+              <th style="width: 118px">Time</th>
+              <th>Actor</th>
+              <th>Action</th>
+              <th class="u-hide-tablet">Resource</th>
+              <th class="u-hide-tablet">Tenant</th>
+              <th style="width: 108px">Outcome</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (event of activity(); track event.id) {
+              <tr>
+                <td class="u-nowrap cell-sub">{{ event.timestamp | relativeTime }}</td>
+                <td>
+                  <div class="actor">
+                    <ctv-entity-avatar [name]="event.actorName" [size]="26" />
+                    <span class="cell-stack">
+                      <span class="cell-primary u-truncate">{{ event.actorName }}</span>
+                      <span class="cell-sub u-truncate">{{ event.actorType }}</span>
+                    </span>
+                  </div>
+                </td>
+                <td><span class="chip chip--code">{{ event.action }}</span></td>
+                <td class="u-hide-tablet u-truncate">{{ event.entityName }}</td>
+                <td class="u-hide-tablet u-truncate">{{ event.tenantName }}</td>
+                <td><ctv-status-badge [status]="event.outcome" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </ctv-section-card>
+
+    <div class="overview-side">
+      <ctv-section-card title="Recent Provisioning Runs" padding="tight">
+        <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/provisioning">
+          All runs
+          <i class="pi pi-arrow-right" aria-hidden="true"></i>
+        </a>
+
+        <ul class="run-list">
+          @for (run of runs(); track run.id) {
+            <li class="run">
+              <div class="run__head">
+                <span class="run__id u-mono">{{ run.id }}</span>
+                <ctv-status-badge [status]="run.status" />
+              </div>
+              <span class="run__tenant u-truncate">{{ run.tenantName }}</span>
+              <span class="run__meta">
+                {{ run.productName }} · {{ run.environment }} · {{ run.startedAt | date: 'HH:mm' }}
+              </span>
+            </li>
+          }
+        </ul>
+      </ctv-section-card>
+
+      <ctv-section-card title="Quick Actions" padding="tight">
+        <div class="quick-grid">
+          @for (action of quickActions; track action.label) {
+            <button type="button" class="quick" (click)="runQuickAction(action.route, action.label)">
+              <span class="quick__icon"><i [class]="action.icon" aria-hidden="true"></i></span>
+              <span class="quick__label">{{ action.label }}</span>
+            </button>
+          }
+        </div>
+      </ctv-section-card>
+    </div>
+  </section>
+</div>

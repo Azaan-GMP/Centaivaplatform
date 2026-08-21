@@ -1,0 +1,341 @@
+<div class="page">
+  <ctv-page-header
+    title="Roles & Permissions"
+    subtitle="Roles bundle permissions and are bound at platform, organization, tenant or application scope."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn" (click)="openAssign()" [disabled]="!selected()">
+        <i class="pi pi-user-plus" aria-hidden="true"></i>
+        Assign Role
+      </button>
+      <button type="button" class="btn btn--primary" (click)="openCreate()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Add Role
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="scope-tiles">
+    <div class="scope-tile scope-tile--platform">
+      <span class="scope-tile__value">{{ scopeCounts().platform }}</span>
+      <span class="scope-tile__label">Platform roles</span>
+    </div>
+    <div class="scope-tile scope-tile--organization">
+      <span class="scope-tile__value">{{ scopeCounts().organization }}</span>
+      <span class="scope-tile__label">Organization roles</span>
+    </div>
+    <div class="scope-tile scope-tile--tenant">
+      <span class="scope-tile__value">{{ scopeCounts().tenant }}</span>
+      <span class="scope-tile__label">Tenant roles</span>
+    </div>
+    <div class="scope-tile scope-tile--application">
+      <span class="scope-tile__value">{{ scopeCounts().application }}</span>
+      <span class="scope-tile__label">Application roles</span>
+    </div>
+  </div>
+
+  <div class="roles-layout">
+    <!-- ============ Roles list ============ -->
+    <aside class="card roles-list">
+      <div class="roles-list__head">
+        <ctv-search-input [(value)]="search" placeholder="Search roles" [width]="0" />
+      </div>
+
+      <div class="roles-list__body scroll-y">
+        @if (loading()) {
+          @for (line of [1, 2, 3, 4, 5, 6]; track line) {
+            <div class="skeleton" style="height: 42px; margin: 8px 10px"></div>
+          }
+        } @else {
+          @for (role of filtered(); track role.id) {
+            <button
+              type="button"
+              class="role-item"
+              [class.role-item--active]="selectedId() === role.id"
+              (click)="selectRole(role)"
+            >
+              <div class="role-item__top">
+                <span class="role-item__name u-truncate">{{ role.name }}</span>
+                @if (role.system) {
+                  <span class="chip" title="System role — cannot be deleted">System</span>
+                }
+              </div>
+              <div class="role-item__meta">
+                <ctv-status-badge [status]="role.scope" [dot]="false" />
+                <span class="u-dim">{{ role.permissionCount }} permissions</span>
+                <span class="u-dim">·</span>
+                <span class="u-dim">{{ role.assignmentCount }} assigned</span>
+              </div>
+            </button>
+          } @empty {
+            <ctv-empty-state icon="pi pi-shield" title="No roles found" message="Try a different search term." [compact]="true" />
+          }
+        }
+      </div>
+    </aside>
+
+    <!-- ============ Role detail ============ -->
+    <section class="roles-detail">
+      @if (selected(); as role) {
+        <div class="card role-head">
+          <div class="role-head__row">
+            <ctv-entity-avatar [name]="role.name" [size]="42" icon="pi pi-shield" />
+            <div class="role-head__text">
+              <div class="role-head__title">
+                <h2 class="role-head__name">{{ role.name }}</h2>
+                <ctv-status-badge [status]="role.status" />
+                <ctv-status-badge [status]="role.scope" [dot]="false" />
+              </div>
+              <p class="u-muted">{{ role.description }}</p>
+            </div>
+          </div>
+
+          <div class="role-head__stats">
+            <div class="rh-stat">
+              <span class="rh-stat__value">{{ grantedCount() }}</span>
+              <span class="rh-stat__label">Granted</span>
+            </div>
+            <div class="rh-stat">
+              <span class="rh-stat__value">{{ totalPermissions() }}</span>
+              <span class="rh-stat__label">Available</span>
+            </div>
+            <div class="rh-stat">
+              <span class="rh-stat__value">{{ role.assignmentCount }}</span>
+              <span class="rh-stat__label">Assignments</span>
+            </div>
+            <div class="rh-stat">
+              <span class="rh-stat__value u-truncate">{{ role.applicationName }}</span>
+              <span class="rh-stat__label">Application</span>
+            </div>
+          </div>
+        </div>
+
+        <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="Role sections" />
+
+        @switch (activeTab()) {
+          <!-- ---------- Permission matrix ---------- -->
+          @case ('permissions') {
+            <ctv-section-card
+              title="Permission matrix"
+              description="Tick a permission to grant it to this role. Changes apply when saved."
+              padding="flush"
+            >
+              <div slot="actions" class="matrix-actions">
+                <label class="matrix-toggle">
+                  <p-checkbox [binary]="true" [ngModel]="onlyGranted()" (ngModelChange)="onlyGranted.set($event)" inputId="onlyGranted" />
+                  <span>Granted only</span>
+                </label>
+                <ctv-search-input [(value)]="matrixSearch" placeholder="Filter permissions" [width]="220" />
+              </div>
+
+              <div class="table-wrap">
+                <table class="ctv-table matrix-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 240px">Module</th>
+                      <th style="width: 220px">Feature</th>
+                      <th>Permission</th>
+                      <th style="width: 110px">Granted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (group of matrix(); track group.module) {
+                      <tr class="matrix-group">
+                        <td colspan="3">
+                          <span class="matrix-group__label">{{ group.module }}</span>
+                          <span class="u-dim">{{ group.rows.length }} permission(s)</span>
+                        </td>
+                        <td>
+                          <button type="button" class="btn btn--ghost btn--sm" (click)="toggleModule(group)">
+                            {{ moduleAllGranted(group) ? 'Revoke all' : 'Grant all' }}
+                          </button>
+                        </td>
+                      </tr>
+                      @for (row of group.rows; track row.permissionKey) {
+                        <tr>
+                          <td class="cell-sub matrix-indent">{{ group.module }}</td>
+                          <td class="cell-sub">{{ row.feature }}</td>
+                          <td>
+                            <span class="cell-stack">
+                              <span class="chip chip--code">{{ row.permissionKey }}</span>
+                              <span class="cell-sub">{{ row.permissionName }}</span>
+                            </span>
+                          </td>
+                          <td>
+                            <label class="matrix-check">
+                              <p-checkbox
+                                [binary]="true"
+                                [ngModel]="row.granted"
+                                (ngModelChange)="togglePermission(row.permissionKey)"
+                                [inputId]="'perm-' + row.permissionKey"
+                              />
+                              <span class="u-sr-only">Grant {{ row.permissionKey }}</span>
+                            </label>
+                          </td>
+                        </tr>
+                      }
+                    } @empty {
+                      <tr>
+                        <td colspan="4">
+                          <ctv-empty-state icon="pi pi-key" title="No permissions match" message="Adjust the filter to see more." [compact]="true" />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+
+              <div slot="footer" class="card__footer">
+                @if (dirty()) {
+                  <span class="u-muted matrix-dirty">
+                    <i class="pi pi-info-circle" aria-hidden="true"></i>
+                    Unsaved permission changes
+                  </span>
+                }
+                <button type="button" class="btn" [disabled]="!dirty()" (click)="resetPermissions()">Reset</button>
+                <button type="button" class="btn btn--primary" [disabled]="!dirty()" (click)="savePermissions()">
+                  Save permissions
+                </button>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Assignments ---------- -->
+          @case ('assignments') {
+            <ctv-section-card title="Role assignments" description="Principals holding this role" padding="flush">
+              <button slot="actions" type="button" class="btn btn--sm btn--primary" (click)="openAssign()">
+                <i class="pi pi-user-plus" aria-hidden="true"></i>
+                Assign
+              </button>
+
+              <div class="table-wrap">
+                <table class="ctv-table">
+                  <thead>
+                    <tr>
+                      <th>Principal</th>
+                      <th>Type</th>
+                      <th>Scope</th>
+                      <th>Assigned by</th>
+                      <th>Assigned</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (assignment of role.assignments; track assignment.id) {
+                      <tr>
+                        <td>
+                          <div class="assignee">
+                            <ctv-entity-avatar [name]="assignment.principalName" [size]="28" />
+                            <span class="cell-stack">
+                              <span class="cell-primary">{{ assignment.principalName }}</span>
+                              <span class="cell-sub">{{ assignment.principalEmail }}</span>
+                            </span>
+                          </div>
+                        </td>
+                        <td>{{ assignment.principalType }}</td>
+                        <td>
+                          <span class="cell-stack">
+                            <span>{{ assignment.scopeName }}</span>
+                            <span class="cell-sub">{{ assignment.scopeType }}</span>
+                          </span>
+                        </td>
+                        <td class="cell-sub">{{ assignment.assignedBy }}</td>
+                        <td class="cell-sub">{{ assignment.assignedAt | relativeTime }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5"><span class="u-dim">No assignments yet.</span></td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Details ---------- -->
+          @case ('details') {
+            <ctv-section-card title="Role definition">
+              <div class="dl dl--2">
+                <div class="dl__item"><span class="dl__label">Role ID</span><span class="dl__value u-mono">{{ role.id }}</span></div>
+                <div class="dl__item"><span class="dl__label">Key</span><span class="dl__value u-mono">{{ role.key }}</span></div>
+                <div class="dl__item"><span class="dl__label">Scope</span><span class="dl__value">{{ role.scope }}</span></div>
+                <div class="dl__item"><span class="dl__label">Application</span><span class="dl__value">{{ role.applicationName }}</span></div>
+                <div class="dl__item"><span class="dl__label">System role</span><span class="dl__value">{{ role.system ? 'Yes' : 'No' }}</span></div>
+                <div class="dl__item"><span class="dl__label">Status</span><span class="dl__value">{{ role.status }}</span></div>
+                <div class="dl__item"><span class="dl__label">Created</span><span class="dl__value">{{ role.createdAt | relativeTime }}</span></div>
+                <div class="dl__item"><span class="dl__label">Last updated</span><span class="dl__value">{{ role.updatedAt | relativeTime }}</span></div>
+              </div>
+              <p class="u-muted u-mt-4">{{ role.description }}</p>
+            </ctv-section-card>
+          }
+        }
+      } @else {
+        <div class="card">
+          <ctv-empty-state icon="pi pi-shield" title="Select a role" message="Choose a role to review its permissions and assignments." />
+        </div>
+      }
+    </section>
+  </div>
+</div>
+
+<!-- ================= Add role ================= -->
+<p-dialog [(visible)]="createOpen" [modal]="true" [draggable]="false" [style]="{ width: '600px' }" header="Add role">
+  <form class="form-grid" [formGroup]="createForm" novalidate>
+    <div class="field">
+      <label class="field__label">Role name <span class="field__req">*</span></label>
+      <input class="input" formControlName="name" placeholder="Timesheet Reviewer" />
+    </div>
+    <div class="field">
+      <label class="field__label">Key <span class="field__req">*</span></label>
+      <input class="input" formControlName="key" placeholder="TIMESHEET_REVIEWER" />
+    </div>
+    <div class="field">
+      <label class="field__label">Scope <span class="field__req">*</span></label>
+      <p-select formControlName="scope" [options]="scopeOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+      <span class="field__hint">Determines where the role can be assigned in the hierarchy.</span>
+    </div>
+    <div class="field">
+      <label class="field__label">Application</label>
+      <p-select
+        formControlName="applicationKey"
+        [options]="applicationOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [showClear]="true"
+        placeholder="All applications"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+    <div class="field form-grid__full">
+      <label class="field__label">Description</label>
+      <textarea class="input" formControlName="description" rows="3" placeholder="What this role is for"></textarea>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="createOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitCreate()">Create role</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ================= Assign role ================= -->
+<p-dialog [(visible)]="assignOpen" [modal]="true" [draggable]="false" [style]="{ width: '520px' }" header="Assign role">
+  <p class="dialog-note">
+    Assigning <strong>{{ selected()?.name }}</strong> grants every permission currently held by the role.
+  </p>
+
+  <form class="form-grid form-grid--1" [formGroup]="assignForm" novalidate>
+    <div class="field">
+      <label class="field__label">Principal <span class="field__req">*</span></label>
+      <input class="input" formControlName="principal" placeholder="person@customer.com" />
+    </div>
+    <div class="field">
+      <label class="field__label">Scope <span class="field__req">*</span></label>
+      <input class="input" formControlName="scopeName" placeholder="Customer Alpha" />
+      <span class="field__hint">The organization, tenant or application the assignment applies to.</span>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="assignOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitAssign()">Assign role</button>
+  </ng-template>
+</p-dialog>

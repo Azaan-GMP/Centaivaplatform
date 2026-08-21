@@ -1,0 +1,198 @@
+<div class="page">
+  <ctv-page-header
+    title="Tenants"
+    subtitle="Isolated product workspaces bound to an organization, a region and an environment."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn">
+        <i class="pi pi-download" aria-hidden="true"></i>
+        Export
+      </button>
+      <button type="button" class="btn btn--primary" (click)="openCreate()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create Tenant
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="tenant-summary">
+    <div class="summary-tile">
+      <span class="summary-tile__label">Total tenants</span>
+      <span class="summary-tile__value">{{ summary().total }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">Active</span>
+      <span class="summary-tile__value">{{ summary().active }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">Provisioning</span>
+      <span class="summary-tile__value">{{ summary().provisioning }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">Tenant members</span>
+      <span class="summary-tile__value">{{ summary().members }}</span>
+    </div>
+    <div class="summary-tile summary-tile--wide">
+      <span class="summary-tile__label">Licence seat utilisation</span>
+      <ctv-metric-progress [used]="summary().used" [total]="summary().seats" size="lg" />
+    </div>
+  </div>
+
+  <ctv-section-card padding="flush">
+    <ctv-data-table-toolbar
+      [(search)]="search"
+      searchPlaceholder="Search tenants by name, key or organization"
+      [searchWidth]="300"
+      [filters]="filters()"
+      [filterValues]="filterValues()"
+      (filterChange)="onFilterChange($event)"
+      (filtersCleared)="clearFilters()"
+    >
+      <button slot="actions" type="button" class="btn btn--primary btn--sm" (click)="openCreate()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create Tenant
+      </button>
+    </ctv-data-table-toolbar>
+
+    <ctv-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [loading]="loading()"
+      rowNoun="tenants"
+      minWidth="1180px"
+      defaultSortField="name"
+      emptyIcon="pi pi-building"
+      emptyTitle="No tenants match your filters"
+      emptyMessage="Try a different search term or clear the filters."
+      (rowClick)="open($any($event))"
+    >
+      <ng-template #cell let-row let-column="column">
+        @switch (column.key) {
+          @case ('name') {
+            <div class="tenant-cell">
+              <ctv-entity-avatar [name]="row.name" [size]="30" />
+              <span class="cell-stack">
+                <span class="cell-primary u-truncate">{{ row.name }}</span>
+                <span class="cell-sub u-truncate">{{ row.primaryContact }}</span>
+              </span>
+            </div>
+          }
+          @case ('key') {
+            <span class="chip chip--code">{{ row.key }}</span>
+          }
+          @case ('organizationName') {
+            <span class="u-truncate">{{ row.organizationName }}</span>
+          }
+          @case ('productKeys.length') {
+            <div class="product-dots">
+              @for (product of row.productKeys.slice(0, 3); track product) {
+                <span class="product-dot" [pTooltip]="product" tooltipPosition="top">{{ product.charAt(0) }}</span>
+              }
+              @if (row.productKeys.length > 3) {
+                <span class="product-dot product-dot--more">+{{ row.productKeys.length - 3 }}</span>
+              }
+              @if (row.productKeys.length === 0) {
+                <span class="u-dim">—</span>
+              }
+            </div>
+          }
+          @case ('memberCount') {
+            <span class="td-num">{{ row.memberCount }}</span>
+          }
+          @case ('region') {
+            <span class="cell-sub">{{ row.region }}</span>
+          }
+          @case ('environment') {
+            <span class="chip">{{ row.environment }}</span>
+          }
+          @case ('status') {
+            <ctv-status-badge [status]="row.status" />
+          }
+          @case ('createdAt') {
+            <span class="cell-sub">{{ row.createdAt | date: 'dd MMM yyyy' }}</span>
+          }
+        }
+      </ng-template>
+
+      <ng-template #rowActions let-row>
+        <ctv-row-actions [items]="rowMenu($any(row))" />
+      </ng-template>
+    </ctv-data-table>
+  </ctv-section-card>
+</div>
+
+<p-dialog [(visible)]="createOpen" [modal]="true" [draggable]="false" [style]="{ width: '640px' }" header="Create tenant">
+  <form class="form-grid" [formGroup]="form" novalidate>
+    <div class="field">
+      <label class="field__label">Tenant name <span class="field__req">*</span></label>
+      <input class="input" formControlName="name" placeholder="Alpha Group Production" [class.is-invalid]="invalid('name')" />
+      @if (invalid('name')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Tenant name is required.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field__label">Key <span class="field__req">*</span></label>
+      <input class="input" formControlName="key" placeholder="ALPHA-PROD" [class.is-invalid]="invalid('key')" />
+      <span class="field__hint">Uppercase identifier used in routing and licence keys.</span>
+    </div>
+
+    <div class="field">
+      <label class="field__label">Slug</label>
+      <input class="input" formControlName="slug" placeholder="alpha-group-production" />
+    </div>
+
+    <div class="field">
+      <label class="field__label">Organization <span class="field__req">*</span></label>
+      <p-select
+        formControlName="organizationId"
+        [options]="organizationOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        placeholder="Select an organization"
+        [style]="{ width: '100%' }"
+      />
+      @if (invalid('organizationId')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Choose the owning organization.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field__label">Region <span class="field__req">*</span></label>
+      <p-select formControlName="region" [options]="regionOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+      <span class="field__hint">Determines data residency and the deployment used for routing.</span>
+    </div>
+
+    <div class="field">
+      <label class="field__label">Environment <span class="field__req">*</span></label>
+      <p-select formControlName="environment" [options]="environmentOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+    </div>
+
+    <div class="field form-grid__full">
+      <label class="field__label">Products</label>
+      <p-multiSelect
+        formControlName="productKeys"
+        [options]="productOptions()"
+        optionLabel="label"
+        optionValue="value"
+        display="chip"
+        placeholder="Select the products this tenant will consume"
+        [style]="{ width: '100%' }"
+      />
+      <span class="field__hint">Each selected product creates a subscription and a licence during provisioning.</span>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="createOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="submitCreate()">
+      @if (saving()) {
+        <i class="pi pi-spinner"></i> Creating…
+      } @else {
+        Create tenant
+      }
+    </button>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,164 @@
+<div class="login">
+  <!-- ============ Brand panel ============ -->
+  <section class="login__brand" aria-labelledby="brand-heading">
+    <div class="brand-panel">
+      <div class="brand-panel__top">
+        <span class="brand-panel__logo">
+          <svg viewBox="0 0 32 32" role="presentation" aria-hidden="true">
+            <rect x="0" y="0" width="32" height="32" rx="8" fill="rgba(255,255,255,0.16)" />
+            <path d="M22.4 12.2a7 7 0 1 0 0 7.6" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round" />
+            <circle cx="22.6" cy="16" r="2.1" fill="#fff" />
+          </svg>
+          <span class="brand-panel__wordmark">
+            <span class="brand-panel__name">Centaiva</span>
+            <span class="brand-panel__suffix">Platform</span>
+          </span>
+        </span>
+      </div>
+
+      <div class="brand-panel__body">
+        <h2 id="brand-heading" class="brand-panel__statement">
+          One control plane for every Centaiva product.
+        </h2>
+        <p class="brand-panel__support">
+          Manage identity, tenants, licensing, security, subscriptions and platform operations
+          from one centralized control plane.
+        </p>
+
+        <ul class="capabilities">
+          @for (capability of capabilities; track capability.label) {
+            <li class="capability">
+              <span class="capability__icon"><i [class]="capability.icon" aria-hidden="true"></i></span>
+              <span class="capability__text">
+                <span class="capability__label">{{ capability.label }}</span>
+                <span class="capability__detail">{{ capability.detail }}</span>
+              </span>
+            </li>
+          }
+        </ul>
+      </div>
+
+      <div class="brand-panel__foot">
+        <div class="brand-stat">
+          <span class="brand-stat__value">126</span>
+          <span class="brand-stat__label">Tenants</span>
+        </div>
+        <div class="brand-stat">
+          <span class="brand-stat__value">3,842</span>
+          <span class="brand-stat__label">Active licences</span>
+        </div>
+        <div class="brand-stat">
+          <span class="brand-stat__value">99.98%</span>
+          <span class="brand-stat__label">Control plane uptime</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ Sign-in panel ============ -->
+  <section class="login__panel">
+    <div class="login-card">
+      <header class="login-card__head">
+        <h1 class="login-card__title">Sign in</h1>
+        <p class="login-card__subtitle">Use your Centaiva Platform administrator account.</p>
+      </header>
+
+      <form class="login-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label class="field__label" for="email">
+            Email
+            <span class="field__req" aria-hidden="true">*</span>
+          </label>
+          <input
+            id="email"
+            type="email"
+            class="input"
+            formControlName="email"
+            autocomplete="username"
+            placeholder="you@company.com"
+            [class.is-invalid]="email.invalid && email.touched"
+            [attr.aria-invalid]="email.invalid && email.touched"
+          />
+          @if (email.invalid && email.touched) {
+            <span class="field__error">
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              Enter a valid email address.
+            </span>
+          }
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="password">
+            Password
+            <span class="field__req" aria-hidden="true">*</span>
+          </label>
+          <div class="password">
+            <input
+              id="password"
+              [type]="passwordVisible() ? 'text' : 'password'"
+              class="input"
+              formControlName="password"
+              autocomplete="current-password"
+              [class.is-invalid]="password.invalid && password.touched"
+            />
+            <button
+              type="button"
+              class="password__toggle"
+              [attr.aria-label]="passwordVisible() ? 'Hide password' : 'Show password'"
+              (click)="togglePassword()"
+            >
+              <i class="pi" [class.pi-eye]="!passwordVisible()" [class.pi-eye-slash]="passwordVisible()" aria-hidden="true"></i>
+            </button>
+          </div>
+          @if (password.invalid && password.touched) {
+            <span class="field__error">
+              <i class="pi pi-exclamation-circle" aria-hidden="true"></i>
+              Your password must be at least 6 characters.
+            </span>
+          }
+        </div>
+
+        <div class="login-form__row">
+          <label class="remember">
+            <p-checkbox formControlName="remember" [binary]="true" inputId="remember" />
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="login-form__link" (click)="forgotPassword($event)">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn--primary btn--lg btn--block" [disabled]="submitting()">
+          @if (submitting()) {
+            <i class="pi pi-spinner login-form__spin" aria-hidden="true"></i>
+            Signing in…
+          } @else {
+            Sign In
+          }
+        </button>
+      </form>
+
+      <div class="sso">
+        <div class="sso__divider"><span>Continue with SSO</span></div>
+
+        <div class="sso__providers">
+          <button type="button" class="btn btn--block sso__btn" (click)="signInWith('Microsoft')">
+            <i class="pi pi-microsoft" aria-hidden="true"></i>
+            Microsoft
+          </button>
+          <button type="button" class="btn btn--block sso__btn" (click)="signInWith('Google')">
+            <i class="pi pi-google" aria-hidden="true"></i>
+            Google
+          </button>
+          <button type="button" class="btn btn--block sso__btn" (click)="signInWith('Enterprise SSO')">
+            <i class="pi pi-building" aria-hidden="true"></i>
+            Enterprise SSO
+          </button>
+        </div>
+      </div>
+
+      <footer class="login-card__foot">
+        <i class="pi pi-lock" aria-hidden="true"></i>
+        Protected by Centaiva Identity
+      </footer>
+    </div>
+  </section>
+</div>

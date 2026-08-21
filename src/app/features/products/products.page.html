@@ -1,0 +1,129 @@
+<div class="page">
+  <ctv-page-header
+    title="Products"
+    subtitle="The product catalogue that tenants subscribe to. Each product owns applications, modules, features and permissions."
+  >
+    <div slot="actions" class="btn-group">
+      <div class="segmented" role="group" aria-label="View mode">
+        <button
+          type="button"
+          class="segmented__item"
+          [class.segmented__item--active]="view() === 'cards'"
+          (click)="view.set('cards')"
+        >
+          <i class="pi pi-th-large" aria-hidden="true"></i>
+          Cards
+        </button>
+        <button
+          type="button"
+          class="segmented__item"
+          [class.segmented__item--active]="view() === 'list'"
+          (click)="view.set('list')"
+        >
+          <i class="pi pi-list" aria-hidden="true"></i>
+          List
+        </button>
+      </div>
+      <button type="button" class="btn btn--primary" (click)="createProduct()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create Product
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="catalog-totals">
+    <div class="total-tile"><span class="total-tile__value">{{ totals().products }}</span><span class="total-tile__label">Products</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().applications }}</span><span class="total-tile__label">Applications</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().modules }}</span><span class="total-tile__label">Modules</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().features }}</span><span class="total-tile__label">Features</span></div>
+    <div class="total-tile"><span class="total-tile__value">{{ totals().permissions }}</span><span class="total-tile__label">Permissions</span></div>
+  </div>
+
+  <ctv-section-card padding="flush">
+    <ctv-data-table-toolbar
+      [(search)]="search"
+      searchPlaceholder="Search products"
+      [filters]="filters"
+      [filterValues]="filterValues()"
+      (filterChange)="onFilterChange($event)"
+      (filtersCleared)="clearFilters()"
+    />
+
+    @if (view() === 'list') {
+      <ctv-data-table
+        [columns]="columns"
+        [rows]="filtered()"
+        [loading]="loading()"
+        rowNoun="products"
+        minWidth="1080px"
+        defaultSortField="name"
+        emptyIcon="pi pi-box"
+        emptyTitle="No products match"
+        (rowClick)="open($any($event))"
+      >
+        <ng-template #cell let-row let-column="column">
+          @switch (column.key) {
+            @case ('name') {
+              <div class="product-row">
+                <span class="product-row__mark" [style.background]="row.iconAccent"></span>
+                <span class="cell-stack">
+                  <span class="cell-primary">{{ row.name }}</span>
+                  <span class="cell-sub u-truncate">{{ row.owner }} · v{{ row.version }}</span>
+                </span>
+              </div>
+            }
+            @case ('key') {
+              <span class="chip chip--code">{{ row.key }}</span>
+            }
+            @case ('status') {
+              <ctv-status-badge [status]="row.status" />
+            }
+            @default {
+              <span class="td-num">{{ row[column.key] }}</span>
+            }
+          }
+        </ng-template>
+
+        <ng-template #rowActions let-row>
+          <ctv-row-actions [items]="rowMenu($any(row))" />
+        </ng-template>
+      </ctv-data-table>
+    } @else {
+      <div class="card__body">
+        <div class="grid grid--auto-lg">
+          @for (product of filtered(); track product.id) {
+            <article class="product-card" (click)="open(product)" tabindex="0" (keydown.enter)="open(product)">
+              <div class="product-card__head">
+                <span class="product-card__mark" [style.background]="product.iconAccent">
+                  {{ product.name.charAt(0) }}
+                </span>
+                <div class="product-card__title">
+                  <span class="product-card__name">{{ product.name }}</span>
+                  <span class="chip chip--code">{{ product.key }}</span>
+                </div>
+                <ctv-status-badge [status]="product.status" />
+              </div>
+
+              <p class="product-card__desc">{{ product.description }}</p>
+
+              <div class="product-card__grid">
+                <div class="pc-stat"><span class="pc-stat__value">{{ product.applicationCount }}</span><span class="pc-stat__label">Applications</span></div>
+                <div class="pc-stat"><span class="pc-stat__value">{{ product.moduleCount }}</span><span class="pc-stat__label">Modules</span></div>
+                <div class="pc-stat"><span class="pc-stat__value">{{ product.tenantCount }}</span><span class="pc-stat__label">Tenants</span></div>
+                <div class="pc-stat"><span class="pc-stat__value">{{ product.subscriptionCount }}</span><span class="pc-stat__label">Subscriptions</span></div>
+              </div>
+
+              <div class="product-card__foot">
+                <span class="chip">v{{ product.version }}</span>
+                <span class="chip">{{ product.lifecycle }}</span>
+                <span class="u-dim">{{ product.owner }}</span>
+              </div>
+            </article>
+          } @empty {
+            <p class="u-dim">No products match the current filters.</p>
+          }
+        </div>
+      </div>
+    }
+  </ctv-section-card>
+</div>

@@ -1,0 +1,627 @@
+<div class="page">
+  <ctv-page-header
+    title="Organizations"
+    subtitle="The Centaiva hierarchy is recursive — organizations nest to any depth across vendors, regions, partners, resellers, customers and divisions."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn" (click)="openMove()" [disabled]="!selected()">
+        <i class="pi pi-arrows-alt" aria-hidden="true"></i>
+        Move Organization
+      </button>
+      <button type="button" class="btn btn--primary" (click)="openAddChild()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Add Organization
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="hier-stats">
+    <div class="hier-stat">
+      <span class="hier-stat__label">Organizations</span>
+      <span class="hier-stat__value">{{ hierarchyStats().total }}</span>
+    </div>
+    <div class="hier-stat">
+      <span class="hier-stat__label">Deepest level</span>
+      <span class="hier-stat__value">{{ hierarchyStats().maxDepth }}</span>
+    </div>
+    <div class="hier-stat">
+      <span class="hier-stat__label">Customers</span>
+      <span class="hier-stat__value">{{ hierarchyStats().customers }}</span>
+    </div>
+    <div class="hier-stat">
+      <span class="hier-stat__label">Partners & resellers</span>
+      <span class="hier-stat__value">{{ hierarchyStats().partners }}</span>
+    </div>
+  </div>
+
+  <div class="org-layout">
+    <!-- ================= Tree ================= -->
+    <aside class="card org-tree" aria-label="Organization hierarchy">
+      <div class="org-tree__head">
+        <ctv-search-input [(value)]="search" placeholder="Search organizations" [width]="0" />
+        <div class="org-tree__tools">
+          <button type="button" class="btn btn--ghost btn--sm" (click)="expandAll()" pTooltip="Expand all" tooltipPosition="bottom">
+            <i class="pi pi-angle-double-down" aria-hidden="true"></i>
+          </button>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="collapseAll()" pTooltip="Collapse all" tooltipPosition="bottom">
+            <i class="pi pi-angle-double-up" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="org-tree__body scroll-y" role="tree" aria-label="Organizations">
+        @if (loading()) {
+          @for (line of [1, 2, 3, 4, 5, 6, 7, 8]; track line) {
+            <div class="skeleton" style="height: 14px; margin: 8px 10px"></div>
+          }
+        } @else {
+          @for (node of tree(); track node.organization.id) {
+            <ctv-org-tree-node
+              [node]="node"
+              [selectedId]="selectedId()"
+              [expandedIds]="expandedIds()"
+              [searchTerm]="search()"
+              (select)="onSelect($event)"
+              (toggle)="onToggle($event)"
+            />
+          }
+        }
+      </div>
+
+      <div class="org-tree__legend">
+        <span class="legend-key"><span class="legend-dot legend-dot--platform"></span> Platform</span>
+        <span class="legend-key"><span class="legend-dot legend-dot--vendor"></span> Vendor</span>
+        <span class="legend-key"><span class="legend-dot legend-dot--partner"></span> Partner</span>
+        <span class="legend-key"><span class="legend-dot legend-dot--customer"></span> Customer</span>
+      </div>
+    </aside>
+
+    <!-- ================= Detail ================= -->
+    <section class="org-detail">
+      @if (selected(); as org) {
+        <div class="card org-head">
+          <div class="org-head__top">
+            <ctv-entity-avatar [name]="org.name" [size]="44" />
+            <div class="org-head__text">
+              <div class="org-head__row">
+                <h2 class="org-head__name">{{ org.name }}</h2>
+                <ctv-status-badge [status]="org.status" />
+                <span class="badge badge--neutral badge--square">{{ org.type }}</span>
+              </div>
+              <p class="org-head__path">
+                @for (ancestor of ancestry(); track ancestor.id; let last = $last) {
+                  <button type="button" class="crumb-link" (click)="onSelect({ id: ancestor.id })">{{ ancestor.name }}</button>
+                  @if (!last) {
+                    <i class="pi pi-angle-right" aria-hidden="true"></i>
+                  }
+                }
+              </p>
+            </div>
+
+            <div class="org-head__actions btn-group">
+              <button type="button" class="btn btn--sm" (click)="openAddChild()">
+                <i class="pi pi-plus" aria-hidden="true"></i>
+                Add Child
+              </button>
+              <button type="button" class="btn btn--sm" (click)="openMove()">
+                <i class="pi pi-arrows-alt" aria-hidden="true"></i>
+                Move
+              </button>
+              <button type="button" class="btn btn--sm" (click)="openEdit()">
+                <i class="pi pi-pencil" aria-hidden="true"></i>
+                Edit
+              </button>
+              <button type="button" class="btn btn--sm btn--primary" (click)="openInvite()">
+                <i class="pi pi-user-plus" aria-hidden="true"></i>
+                Invite Member
+              </button>
+            </div>
+          </div>
+
+          <div class="org-head__stats">
+            <div class="org-stat">
+              <span class="org-stat__value">{{ children().length }}</span>
+              <span class="org-stat__label">Direct children</span>
+            </div>
+            <div class="org-stat">
+              <span class="org-stat__value">{{ descendants().length }}</span>
+              <span class="org-stat__label">Total descendants</span>
+            </div>
+            <div class="org-stat">
+              <span class="org-stat__value">{{ organizationTenants().length }}</span>
+              <span class="org-stat__label">Tenants in sub-tree</span>
+            </div>
+            <div class="org-stat">
+              <span class="org-stat__value">{{ org.memberCount }}</span>
+              <span class="org-stat__label">Members</span>
+            </div>
+            <div class="org-stat">
+              <span class="org-stat__value">{{ org.licenseSeatsUsed }}/{{ org.licenseSeats }}</span>
+              <span class="org-stat__label">Licence seats</span>
+            </div>
+          </div>
+        </div>
+
+        <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="Organization sections" />
+
+        @switch (activeTab()) {
+          <!-- ---------- Overview ---------- -->
+          @case ('overview') {
+            <div class="grid grid--2">
+              <ctv-section-card title="Organization" description="Registry attributes for this hierarchy node">
+                <ctv-definition-list [items]="overviewItems()" />
+              </ctv-section-card>
+
+              <div class="stack">
+                <ctv-section-card title="Owner & contact">
+                  <div class="kv-rows">
+                    <div class="kv-row">
+                      <span class="kv-row__label">Owner</span>
+                      <span class="kv-row__value">{{ org.ownerName }}</span>
+                    </div>
+                    <div class="kv-row">
+                      <span class="kv-row__label">Owner email</span>
+                      <span class="kv-row__value">{{ org.ownerEmail || '—' }}</span>
+                    </div>
+                    <div class="kv-row">
+                      <span class="kv-row__label">Invoice email</span>
+                      <span class="kv-row__value">{{ org.commercial.invoiceEmail }}</span>
+                    </div>
+                    <div class="kv-row">
+                      <span class="kv-row__label">Billing account</span>
+                      <span class="kv-row__value u-mono">{{ org.commercial.billingAccount }}</span>
+                    </div>
+                  </div>
+                </ctv-section-card>
+
+                <ctv-section-card title="Description">
+                  <p class="prose">{{ org.description }}</p>
+                  <div class="u-mt-4">
+                    <ctv-metric-progress
+                      label="Licence seat utilisation"
+                      [used]="org.licenseSeatsUsed"
+                      [total]="org.licenseSeats"
+                      size="lg"
+                    />
+                  </div>
+                </ctv-section-card>
+              </div>
+            </div>
+          }
+
+          <!-- ---------- Children ---------- -->
+          @case ('children') {
+            <ctv-section-card
+              title="Child organizations"
+              description="Direct children of this node. Each child can nest further without limit."
+              padding="flush"
+            >
+              <button slot="actions" type="button" class="btn btn--sm btn--primary" (click)="openAddChild()">
+                <i class="pi pi-plus" aria-hidden="true"></i>
+                Add Child
+              </button>
+
+              <div class="table-wrap">
+                <table class="ctv-table">
+                  <thead>
+                    <tr>
+                      <th>Organization</th>
+                      <th>Key</th>
+                      <th>Type</th>
+                      <th>Region</th>
+                      <th class="td-num">Children</th>
+                      <th class="td-num">Tenants</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (child of children(); track child.id) {
+                      <tr class="is-clickable" (click)="onSelect({ id: child.id })">
+                        <td class="cell-primary">{{ child.name }}</td>
+                        <td><span class="chip chip--code">{{ child.key }}</span></td>
+                        <td>{{ child.type }}</td>
+                        <td class="cell-sub">{{ child.region }}</td>
+                        <td class="td-num">{{ child.childCount }}</td>
+                        <td class="td-num">{{ child.tenantCount }}</td>
+                        <td><ctv-status-badge [status]="child.status" /></td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="7">
+                          <ctv-empty-state
+                            icon="pi pi-sitemap"
+                            title="No child organizations"
+                            message="This node is a leaf in the hierarchy. Add a child to nest further."
+                            [compact]="true"
+                          />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Tenants ---------- -->
+          @case ('tenants') {
+            <ctv-section-card
+              title="Tenants"
+              description="Every tenant belonging to this organization or anything beneath it"
+              padding="flush"
+            >
+              <div class="table-wrap">
+                <table class="ctv-table">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th>
+                      <th>Owning organization</th>
+                      <th>Environment</th>
+                      <th>Region</th>
+                      <th class="td-num">Members</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (tenant of organizationTenants(); track tenant.id) {
+                      <tr class="is-clickable" (click)="openTenant(tenant.id)">
+                        <td class="cell-primary">{{ tenant.name }}</td>
+                        <td class="cell-sub">{{ tenant.organizationName }}</td>
+                        <td><span class="chip">{{ tenant.environment }}</span></td>
+                        <td class="cell-sub">{{ tenant.region }}</td>
+                        <td class="td-num">{{ tenant.memberCount }}</td>
+                        <td><ctv-status-badge [status]="tenant.status" /></td>
+                      </tr>
+                    } @empty {
+                      <tr>
+                        <td colspan="6">
+                          <ctv-empty-state icon="pi pi-building" title="No tenants" message="No tenants exist beneath this organization yet." [compact]="true" />
+                        </td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Members ---------- -->
+          @case ('members') {
+            <ctv-section-card title="Members" description="Principals with a membership on this organization node" padding="flush">
+              <button slot="actions" type="button" class="btn btn--sm btn--primary" (click)="openInvite()">
+                <i class="pi pi-user-plus" aria-hidden="true"></i>
+                Invite Member
+              </button>
+
+              <div class="table-wrap">
+                <table class="ctv-table">
+                  <thead>
+                    <tr>
+                      <th>Member</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Status</th>
+                      <th>Added</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (member of org.members; track member.id) {
+                      <tr>
+                        <td>
+                          <div class="member-cell">
+                            <ctv-entity-avatar [name]="member.name" [size]="28" />
+                            <span class="cell-primary">{{ member.name }}</span>
+                          </div>
+                        </td>
+                        <td class="cell-sub">{{ member.email }}</td>
+                        <td>{{ member.role }}</td>
+                        <td><ctv-status-badge [status]="member.status" /></td>
+                        <td class="cell-sub">{{ member.addedAt | relativeTime }}</td>
+                      </tr>
+                    } @empty {
+                      <tr><td colspan="5"><span class="u-dim">No members yet.</span></td></tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Roles ---------- -->
+          @case ('roles') {
+            <ctv-section-card title="Organization roles" description="Roles that can be assigned within this organization scope">
+              <div class="grid grid--3">
+                @for (role of ['Organization Admin', 'Finance Admin', 'Tenant Admin', 'Read Only', 'Support Agent', 'Security Auditor']; track role) {
+                  <div class="role-card">
+                    <div class="role-card__head">
+                      <span class="cell-primary">{{ role }}</span>
+                      <span class="badge badge--primary badge--square">Organization</span>
+                    </div>
+                    <p class="cell-sub">Inherited by every descendant unless overridden lower in the tree.</p>
+                    <div class="role-card__foot">
+                      <span class="u-dim">{{ org.memberCount }} member(s) eligible</span>
+                    </div>
+                  </div>
+                }
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Licensing ---------- -->
+          @case ('licensing') {
+            <div class="grid grid--2">
+              <ctv-section-card title="Licence position" description="Seats held directly by this organization">
+                <ctv-metric-progress
+                  label="Assigned seats"
+                  [used]="org.licenseSeatsUsed"
+                  [total]="org.licenseSeats"
+                  size="lg"
+                />
+                <div class="kv-rows u-mt-4">
+                  <div class="kv-row">
+                    <span class="kv-row__label">Total seats</span>
+                    <span class="kv-row__value">{{ org.licenseSeats }}</span>
+                  </div>
+                  <div class="kv-row">
+                    <span class="kv-row__label">Assigned</span>
+                    <span class="kv-row__value">{{ org.licenseSeatsUsed }}</span>
+                  </div>
+                  <div class="kv-row">
+                    <span class="kv-row__label">Available</span>
+                    <span class="kv-row__value">{{ org.licenseSeats - org.licenseSeatsUsed }}</span>
+                  </div>
+                </div>
+              </ctv-section-card>
+
+              <ctv-section-card title="Delegated pools" description="Pools owned by this organization" padding="flush">
+                <div class="table-wrap">
+                  <table class="ctv-table" style="min-width: 420px">
+                    <thead>
+                      <tr>
+                        <th>Pool</th>
+                        <th class="td-num">Total</th>
+                        <th class="td-num">Allocated</th>
+                        <th class="td-num">Available</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (pool of organizationPools(); track pool.id) {
+                        <tr>
+                          <td class="cell-primary">{{ pool.name }}</td>
+                          <td class="td-num">{{ pool.totalSeats }}</td>
+                          <td class="td-num">{{ pool.allocatedSeats }}</td>
+                          <td class="td-num">{{ pool.availableSeats }}</td>
+                          <td><ctv-status-badge [status]="pool.status" /></td>
+                        </tr>
+                      } @empty {
+                        <tr>
+                          <td colspan="5">
+                            <ctv-empty-state icon="pi pi-share-alt" title="No delegated pools" message="This organization consumes seats directly." [compact]="true" />
+                          </td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </ctv-section-card>
+            </div>
+          }
+
+          <!-- ---------- Commercial ---------- -->
+          @case ('commercial') {
+            <ctv-section-card title="Commercial terms" description="Contract and billing information held against this organization">
+              <div class="dl dl--2">
+                <div class="dl__item">
+                  <span class="dl__label">Billing account</span>
+                  <span class="dl__value u-mono">{{ org.commercial.billingAccount }}</span>
+                </div>
+                <div class="dl__item">
+                  <span class="dl__label">Currency</span>
+                  <span class="dl__value">{{ org.commercial.currency }}</span>
+                </div>
+                <div class="dl__item">
+                  <span class="dl__label">Payment terms</span>
+                  <span class="dl__value">{{ org.commercial.paymentTerms }}</span>
+                </div>
+                <div class="dl__item">
+                  <span class="dl__label">Annual contract value</span>
+                  <span class="dl__value">{{ org.commercial.currency }} {{ org.commercial.annualValue.toLocaleString('en-GB') }}</span>
+                </div>
+                <div class="dl__item">
+                  <span class="dl__label">Contract start</span>
+                  <span class="dl__value">{{ org.commercial.contractStart | relativeTime }}</span>
+                </div>
+                <div class="dl__item">
+                  <span class="dl__label">Contract end</span>
+                  <span class="dl__value">{{ org.commercial.contractEnd | relativeTime }}</span>
+                </div>
+              </div>
+            </ctv-section-card>
+          }
+
+          <!-- ---------- Audit ---------- -->
+          @case ('audit') {
+            <ctv-section-card title="Audit history" description="Recent changes affecting this organization" padding="flush">
+              <div class="table-wrap">
+                <table class="ctv-table">
+                  <thead>
+                    <tr>
+                      <th style="width: 140px">When</th>
+                      <th>Actor</th>
+                      <th>Action</th>
+                      <th>Entity</th>
+                      <th style="width: 110px">Outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (event of auditEvents(); track event.id) {
+                      <tr>
+                        <td class="cell-sub">{{ event.timestamp | relativeTime }}</td>
+                        <td class="u-truncate">{{ event.actorName }}</td>
+                        <td><span class="chip chip--code">{{ event.action }}</span></td>
+                        <td class="u-truncate cell-sub">{{ event.entityName }}</td>
+                        <td><ctv-status-badge [status]="event.outcome" /></td>
+                      </tr>
+                    }
+                  </tbody>
+                </table>
+              </div>
+            </ctv-section-card>
+          }
+        }
+      } @else {
+        <div class="card">
+          <ctv-empty-state
+            icon="pi pi-sitemap"
+            title="Select an organization"
+            message="Choose a node from the hierarchy to inspect its tenants, members, licensing and commercial terms."
+          />
+        </div>
+      }
+    </section>
+  </div>
+</div>
+
+<!-- ================= Add child ================= -->
+<p-dialog [(visible)]="addChildOpen" [modal]="true" [draggable]="false" [style]="{ width: '620px' }" header="Add child organization">
+  <p class="dialog-note">
+    The new organization is created beneath
+    <strong>{{ selected()?.name ?? 'the hierarchy root' }}</strong>. It can itself have children without depth limit.
+  </p>
+
+  <form class="form-grid" [formGroup]="childForm" novalidate>
+    <div class="field">
+      <label class="field__label">Name <span class="field__req">*</span></label>
+      <input class="input" formControlName="name" placeholder="Customer Alpha" />
+    </div>
+    <div class="field">
+      <label class="field__label">Key <span class="field__req">*</span></label>
+      <input class="input" formControlName="key" placeholder="CUST-ALPHA" />
+      <span class="field__hint">Immutable identifier used by the API.</span>
+    </div>
+    <div class="field">
+      <label class="field__label">Slug</label>
+      <input class="input" formControlName="slug" placeholder="customer-alpha" />
+    </div>
+    <div class="field">
+      <label class="field__label">Type <span class="field__req">*</span></label>
+      <p-select formControlName="type" [options]="typeOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+    </div>
+    <div class="field">
+      <label class="field__label">Region <span class="field__req">*</span></label>
+      <p-select formControlName="region" [options]="regionOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+    </div>
+    <div class="field">
+      <label class="field__label">Owner name</label>
+      <input class="input" formControlName="ownerName" placeholder="Optional" />
+    </div>
+    <div class="field form-grid__full">
+      <label class="field__label">Owner email</label>
+      <input class="input" type="email" formControlName="ownerEmail" placeholder="owner@customer.com" />
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="addChildOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitAddChild()">Create organization</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ================= Move ================= -->
+<p-dialog [(visible)]="moveOpen" [modal]="true" [draggable]="false" [style]="{ width: '560px' }" header="Move organization">
+  <p class="dialog-note">
+    Moving <strong>{{ selected()?.name }}</strong> re-parents its entire sub-tree
+    ({{ descendants().length }} descendant organizations). Descendants beneath it cannot be selected as the new parent.
+  </p>
+
+  <form [formGroup]="moveForm" novalidate>
+    <div class="field">
+      <label class="field__label">New parent <span class="field__req">*</span></label>
+      <p-select
+        formControlName="parentId"
+        [options]="moveTargets()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        placeholder="Select the new parent"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="moveOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitMove()">Move organization</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ================= Edit ================= -->
+<p-dialog [(visible)]="editOpen" [modal]="true" [draggable]="false" [style]="{ width: '620px' }" header="Edit organization">
+  <form class="form-grid" [formGroup]="editForm" novalidate>
+    <div class="field">
+      <label class="field__label">Name <span class="field__req">*</span></label>
+      <input class="input" formControlName="name" />
+    </div>
+    <div class="field">
+      <label class="field__label">Type <span class="field__req">*</span></label>
+      <p-select formControlName="type" [options]="typeOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+    </div>
+    <div class="field">
+      <label class="field__label">Region <span class="field__req">*</span></label>
+      <p-select formControlName="region" [options]="regionOptions" optionLabel="label" optionValue="value" [style]="{ width: '100%' }" />
+    </div>
+    <div class="field">
+      <label class="field__label">Owner name</label>
+      <input class="input" formControlName="ownerName" />
+    </div>
+    <div class="field form-grid__full">
+      <label class="field__label">Owner email</label>
+      <input class="input" type="email" formControlName="ownerEmail" />
+    </div>
+    <div class="field form-grid__full">
+      <label class="field__label">Description</label>
+      <textarea class="input" formControlName="description" rows="3"></textarea>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="editOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitEdit()">Save changes</button>
+  </ng-template>
+</p-dialog>
+
+<!-- ================= Invite ================= -->
+<p-dialog [(visible)]="inviteOpen" [modal]="true" [draggable]="false" [style]="{ width: '520px' }" header="Invite member">
+  <p class="dialog-note">
+    The invitation grants access to <strong>{{ selected()?.name }}</strong> and, by inheritance, everything beneath it.
+  </p>
+
+  <form class="form-grid form-grid--1" [formGroup]="inviteForm" novalidate>
+    <div class="field">
+      <label class="field__label">Email <span class="field__req">*</span></label>
+      <input class="input" type="email" formControlName="email" placeholder="person@customer.com" />
+    </div>
+    <div class="field">
+      <label class="field__label">Role <span class="field__req">*</span></label>
+      <p-select
+        formControlName="role"
+        [options]="[
+          { label: 'Organization Admin', value: 'Organization Admin' },
+          { label: 'Finance Admin', value: 'Finance Admin' },
+          { label: 'Tenant Admin', value: 'Tenant Admin' },
+          { label: 'Read Only', value: 'Read Only' }
+        ]"
+        optionLabel="label"
+        optionValue="value"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="inviteOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" (click)="submitInvite()">Send invitation</button>
+  </ng-template>
+</p-dialog>

@@ -1,0 +1,115 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()">
+  <div class="sidebar__brand">
+    <a class="brand" routerLink="/app/overview" (click)="onNavigate()" aria-label="Centaiva Platform home">
+      <span class="brand__mark" aria-hidden="true">
+        <svg viewBox="0 0 32 32" role="presentation">
+          <defs>
+            <linearGradient id="ctv-mark" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#1a73e8" />
+              <stop offset="100%" stop-color="#34a853" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="32" height="32" rx="8" fill="url(#ctv-mark)" />
+          <path
+            d="M22.4 12.2a7 7 0 1 0 0 7.6"
+            fill="none"
+            stroke="#fff"
+            stroke-width="2.6"
+            stroke-linecap="round"
+          />
+          <circle cx="22.6" cy="16" r="2.1" fill="#fff" />
+        </svg>
+      </span>
+      @if (!collapsed()) {
+        <span class="brand__text">
+          <span class="brand__name">Centaiva</span>
+          <span class="brand__suffix">Platform</span>
+        </span>
+      }
+    </a>
+  </div>
+
+  @if (!collapsed()) {
+    <div class="sidebar__context">
+      <button type="button" class="context" (click)="toggleContext()" [attr.aria-expanded]="contextOpen()">
+        <span class="context__avatar" aria-hidden="true">C</span>
+        <span class="context__text">
+          <span class="context__name">Centaiva</span>
+          <span class="context__scope">Platform Administration</span>
+        </span>
+        <i class="pi pi-angle-down context__chevron" [class.context__chevron--open]="contextOpen()" aria-hidden="true"></i>
+      </button>
+
+      @if (contextOpen()) {
+        <div class="context-menu" role="menu">
+          <span class="context-menu__label">Switch context</span>
+          <button type="button" class="context-menu__item context-menu__item--active" role="menuitem">
+            <i class="pi pi-check" aria-hidden="true"></i>
+            Platform Administration
+          </button>
+          <button type="button" class="context-menu__item" role="menuitem">
+            <i class="pi pi-sitemap" aria-hidden="true"></i>
+            WorkWell — Vendor
+          </button>
+          <button type="button" class="context-menu__item" role="menuitem">
+            <i class="pi pi-sitemap" aria-hidden="true"></i>
+            MedPure — Vendor
+          </button>
+          <button type="button" class="context-menu__item" role="menuitem">
+            <i class="pi pi-share-alt" aria-hidden="true"></i>
+            Partner Network
+          </button>
+        </div>
+      }
+    </div>
+  }
+
+  <nav class="sidebar__nav scroll-y" aria-label="Primary">
+    @for (group of groups; track group.label) {
+      <div class="nav-group">
+        @if (!collapsed()) {
+          <span class="nav-group__label">{{ group.label }}</span>
+        } @else {
+          <span class="nav-group__rule" aria-hidden="true"></span>
+        }
+
+        <ul>
+          @for (item of group.items; track item.route) {
+            <li>
+              <a
+                class="nav-item"
+                [class.nav-item--active]="isActive(item)"
+                [routerLink]="item.route"
+                (click)="onNavigate()"
+                [pTooltip]="collapsed() ? item.label : ''"
+                tooltipPosition="right"
+                [attr.aria-current]="isActive(item) ? 'page' : null"
+              >
+                <i class="nav-item__icon" [class]="item.icon" aria-hidden="true"></i>
+                @if (!collapsed()) {
+                  <span class="nav-item__label">{{ item.label }}</span>
+                  @if (item.badge) {
+                    <span class="nav-item__badge">{{ item.badge }}</span>
+                  }
+                }
+              </a>
+            </li>
+          }
+        </ul>
+      </div>
+    }
+  </nav>
+
+  <div class="sidebar__footer">
+    <a class="nav-item nav-item--accent" routerLink="/app/onboarding" (click)="onNavigate()"
+       [pTooltip]="collapsed() ? 'Onboard Customer' : ''" tooltipPosition="right">
+      <i class="nav-item__icon pi pi-sparkles" aria-hidden="true"></i>
+      @if (!collapsed()) {
+        <span class="nav-item__label">Onboard Customer</span>
+      }
+    </a>
+    @if (!collapsed()) {
+      <p class="sidebar__version">Centaiva Platform · v6.0.3</p>
+    }
+  </div>
+</aside>

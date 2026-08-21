@@ -1,0 +1,110 @@
+/* =========================================================
+   Centaiva Platform — Design Tokens
+   ========================================================= */
+
+:root {
+  /* Brand */
+  --color-primary: #1a73e8;
+  --color-primary-hover: #1662c9;
+  --color-primary-active: #1354ac;
+  --color-primary-soft: #e8f0fe;
+  --color-primary-softer: #f3f7fe;
+  --color-primary-border: #c6dafc;
+
+  --color-success: #34a853;
+  --color-success-soft: #e6f4ea;
+  --color-success-border: #b7e1c3;
+
+  --color-warning: #f59e0b;
+  --color-warning-soft: #fef4e6;
+  --color-warning-border: #fbd89b;
+
+  --color-danger: #dc2626;
+  --color-danger-soft: #fdecec;
+  --color-danger-border: #f6bdbd;
+
+  --color-info: #0891b2;
+  --color-info-soft: #e5f6fa;
+  --color-info-border: #a9dfeb;
+
+  --color-neutral-soft: #f1f3f5;
+  --color-neutral-border: #dfe3e8;
+
+  --color-purple: #7c3aed;
+  --color-purple-soft: #f1ebfe;
+  --color-purple-border: #d8c7fb;
+
+  --gradient-brand: linear-gradient(135deg, #1a73e8 0%, #34a853 100%);
+  --gradient-brand-soft: linear-gradient(135deg, rgba(26, 115, 232, 0.09) 0%, rgba(52, 168, 83, 0.09) 100%);
+
+  /* Surfaces */
+  --surface-page: #f7f8fa;
+  --surface-card: #ffffff;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f2f4f7;
+  --surface-hover: #f5f7fa;
+  --surface-active: #eef2f7;
+  --surface-inverse: #0f172a;
+  --surface-sidebar: #ffffff;
+  --surface-header: #ffffff;
+
+  /* Borders */
+  --border-default: #e5e7eb;
+  --border-strong: #d3d8de;
+  --border-subtle: #eef0f3;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9aa1ab;
+  --text-inverse: #ffffff;
+  --text-link: #1a73e8;
+
+  /* Layout */
+  --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
+  --header-height: 64px;
+  --content-max-width: 1680px;
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.05);
+  --shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.04);
+  --shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12), 0 4px 8px rgba(16, 24, 40, 0.05);
+  --shadow-focus: 0 0 0 3px rgba(26, 115, 232, 0.18);
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-7: 32px;
+  --space-8: 40px;
+  --space-9: 48px;
+
+  /* Typography */
+  --font-sans: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Cascadia Mono', Consolas, 'Courier New', monospace;
+
+  --fs-xs: 11px;
+  --fs-sm: 12px;
+  --fs-base: 13px;
+  --fs-md: 14px;
+  --fs-lg: 16px;
+  --fs-xl: 20px;
+  --fs-2xl: 24px;
+  --fs-3xl: 30px;
+
+  --z-header: 60;
+  --z-sidebar: 70;
+  --z-overlay: 1200;
+}

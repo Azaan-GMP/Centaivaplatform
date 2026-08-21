@@ -1,0 +1,229 @@
+<div class="page">
+  <ctv-page-header
+    title="Users"
+    subtitle="Every principal that can authenticate against the Centaiva Platform."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn">
+        <i class="pi pi-download" aria-hidden="true"></i>
+        Export
+      </button>
+      <button type="button" class="btn btn--primary" (click)="openCreate()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create User
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="user-summary">
+    <div class="summary-tile">
+      <span class="summary-tile__label">Total users</span>
+      <span class="summary-tile__value">{{ summary().total }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">Active</span>
+      <span class="summary-tile__value">{{ summary().active }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">Pending invitations</span>
+      <span class="summary-tile__value">{{ summary().invited }}</span>
+    </div>
+    <div class="summary-tile">
+      <span class="summary-tile__label">MFA protected</span>
+      <span class="summary-tile__value">{{ summary().mfaEnabled }}</span>
+    </div>
+  </div>
+
+  <ctv-section-card padding="flush">
+    <ctv-data-table-toolbar
+      [(search)]="search"
+      searchPlaceholder="Search users by name, email or role"
+      [searchWidth]="300"
+      [filters]="filters()"
+      [filterValues]="filterValues()"
+      (filterChange)="onFilterChange($event)"
+      (filtersCleared)="clearFilters()"
+    >
+      <button slot="actions" type="button" class="btn btn--primary btn--sm" (click)="openCreate()">
+        <i class="pi pi-plus" aria-hidden="true"></i>
+        Create User
+      </button>
+    </ctv-data-table-toolbar>
+
+    <ctv-data-table
+      [columns]="columns"
+      [rows]="filtered()"
+      [loading]="loading()"
+      rowNoun="users"
+      minWidth="1120px"
+      defaultSortField="displayName"
+      emptyIcon="pi pi-users"
+      emptyTitle="No users match your filters"
+      emptyMessage="Adjust the search term or clear the filters to see more results."
+      (rowClick)="open($any($event))"
+    >
+      <ng-template #cell let-row let-column="column">
+        @switch (column.key) {
+          @case ('displayName') {
+            <div class="user-cell">
+              <ctv-entity-avatar [name]="row.displayName" [color]="row.avatarColor" [size]="32" />
+              <span class="cell-stack">
+                <span class="cell-primary u-truncate">{{ row.displayName }}</span>
+                <span class="cell-sub u-truncate">{{ row.jobTitle }}</span>
+              </span>
+            </div>
+          }
+          @case ('email') {
+            <span class="u-truncate">{{ row.email }}</span>
+          }
+          @case ('status') {
+            <ctv-status-badge [status]="row.status" />
+          }
+          @case ('organizations.length') {
+            <span class="td-num" [pTooltip]="row.organizations.length + ' organizations'">{{ row.organizationIds.length }}</span>
+          }
+          @case ('tenants.length') {
+            <span class="td-num">{{ row.tenantIds.length }}</span>
+          }
+          @case ('productKeys.length') {
+            <div class="product-dots">
+              @for (product of row.productKeys.slice(0, 3); track product) {
+                <span class="product-dot" [pTooltip]="product" tooltipPosition="top">{{ product.charAt(0) }}</span>
+              }
+              @if (row.productKeys.length > 3) {
+                <span class="product-dot product-dot--more">+{{ row.productKeys.length - 3 }}</span>
+              }
+              @if (row.productKeys.length === 0) {
+                <span class="u-dim">—</span>
+              }
+            </div>
+          }
+          @case ('mfa') {
+            <ctv-status-badge [status]="row.mfa" [dot]="false" />
+          }
+          @case ('lastSignInAt') {
+            @if (row.lastSignInAt) {
+              <span class="cell-sub">{{ row.lastSignInAt | relativeTime }}</span>
+            } @else {
+              <span class="u-dim">Never</span>
+            }
+          }
+          @case ('createdAt') {
+            <span class="cell-sub">{{ row.createdAt | date: 'dd MMM yyyy' }}</span>
+          }
+        }
+      </ng-template>
+
+      <ng-template #rowActions let-row>
+        <ctv-row-actions [items]="rowMenu($any(row))" />
+      </ng-template>
+    </ctv-data-table>
+  </ctv-section-card>
+</div>
+
+<!-- ================= Create user ================= -->
+<p-dialog
+  [(visible)]="createOpen"
+  [modal]="true"
+  [draggable]="false"
+  [resizable]="false"
+  [style]="{ width: '620px' }"
+  header="Create user"
+>
+  <form class="form-grid" [formGroup]="form" (ngSubmit)="submitCreate()" novalidate>
+    <div class="field">
+      <label class="field__label" for="firstName">First name <span class="field__req">*</span></label>
+      <input id="firstName" class="input" formControlName="firstName" [class.is-invalid]="invalid('firstName')" />
+      @if (invalid('firstName')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> First name is required.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="lastName">Last name <span class="field__req">*</span></label>
+      <input id="lastName" class="input" formControlName="lastName" [class.is-invalid]="invalid('lastName')" />
+      @if (invalid('lastName')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Last name is required.</span>
+      }
+    </div>
+
+    <div class="field form-grid__full">
+      <label class="field__label" for="email">Email <span class="field__req">*</span></label>
+      <input id="email" type="email" class="input" formControlName="email" [class.is-invalid]="invalid('email')" />
+      <span class="field__hint">The invitation is sent to this address and becomes the sign-in identifier.</span>
+      @if (invalid('email')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Enter a valid email address.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field__label" for="jobTitle">Job title</label>
+      <input id="jobTitle" class="input" formControlName="jobTitle" placeholder="Optional" />
+    </div>
+
+    <div class="field">
+      <label class="field__label">Platform role <span class="field__req">*</span></label>
+      <p-select
+        formControlName="role"
+        [options]="roleOptions"
+        optionLabel="label"
+        optionValue="value"
+        [style]="{ width: '100%' }"
+      />
+    </div>
+
+    <div class="field">
+      <label class="field__label">Organization <span class="field__req">*</span></label>
+      <p-select
+        formControlName="organizationId"
+        [options]="organizationOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        placeholder="Select an organization"
+        [style]="{ width: '100%' }"
+      />
+      @if (invalid('organizationId')) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Choose an organization.</span>
+      }
+    </div>
+
+    <div class="field">
+      <label class="field__label">Tenant</label>
+      <p-select
+        formControlName="tenantId"
+        [options]="tenantOptions()"
+        optionLabel="label"
+        optionValue="value"
+        [filter]="true"
+        filterBy="label"
+        [showClear]="true"
+        placeholder="Optional"
+        [style]="{ width: '100%' }"
+      />
+      <span class="field__hint">Leave empty to grant organization level access only.</span>
+    </div>
+  </form>
+
+  <ng-template #footer>
+    <button type="button" class="btn" (click)="createOpen.set(false)">Cancel</button>
+    <button type="button" class="btn btn--primary" [disabled]="saving()" (click)="submitCreate()">
+      @if (saving()) {
+        <i class="pi pi-spinner" aria-hidden="true"></i> Creating…
+      } @else {
+        Create user
+      }
+    </button>
+  </ng-template>
+</p-dialog>
+
+<ctv-confirm-dialog
+  [(visible)]="confirmOpen"
+  title="Disable this user?"
+  [message]="'Disabling ' + (pendingUser()?.displayName ?? 'this user') + ' revokes every active session immediately.'"
+  detail="Licence seats stay assigned until they are released manually."
+  confirmLabel="Disable user"
+  tone="danger"
+  (confirmed)="confirmDisable()"
+/>

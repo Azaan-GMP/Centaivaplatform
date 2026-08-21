@@ -1,0 +1,423 @@
+@if (loading()) {
+  <div class="page">
+    <div class="card"><div class="card__body"><ctv-loading-skeleton [rowCount]="5" /></div></div>
+  </div>
+} @else if (!user()) {
+  <div class="page">
+    <ctv-empty-state icon="pi pi-user" title="User not found" message="This user may have been removed from the platform.">
+      <button type="button" class="btn btn--primary" (click)="back()">Back to users</button>
+    </ctv-empty-state>
+  </div>
+} @else if (user(); as u) {
+  <div class="page">
+    <ctv-page-header
+      [title]="u.displayName"
+      [crumbs]="[{ label: 'Users', link: '/app/users' }, { label: u.displayName }]"
+    >
+      <div slot="actions" class="btn-group">
+        <button type="button" class="btn" (click)="action('Edit user', 'The edit form opens during API integration.')">
+          <i class="pi pi-pencil" aria-hidden="true"></i>
+          Edit
+        </button>
+        <button type="button" class="btn" (click)="action('Password reset sent', 'A reset link was queued for ' + u.email + '.')">
+          <i class="pi pi-key" aria-hidden="true"></i>
+          Reset Password
+        </button>
+        <button type="button" class="btn" (click)="action('MFA reset', u.displayName + ' must re-enrol at the next sign in.')">
+          <i class="pi pi-mobile" aria-hidden="true"></i>
+          Reset MFA
+        </button>
+        <button type="button" class="btn btn--danger" (click)="askDisable()">
+          <i class="pi pi-ban" aria-hidden="true"></i>
+          {{ u.status === 'Disabled' ? 'Enable User' : 'Disable User' }}
+        </button>
+      </div>
+    </ctv-page-header>
+
+    <!-- ============ Identity header ============ -->
+    <section class="identity card">
+      <ctv-entity-avatar [name]="u.displayName" [color]="u.avatarColor" [size]="60" />
+      <div class="identity__text">
+        <div class="identity__row">
+          <h2 class="identity__name">{{ u.displayName }}</h2>
+          <ctv-status-badge [status]="u.status" />
+          <ctv-status-badge [status]="u.mfa" [dot]="false" [title]="'Multi-factor authentication: ' + u.mfa" />
+        </div>
+        <p class="identity__email">{{ u.email }}</p>
+        <p class="identity__meta">
+          {{ u.jobTitle }} · {{ u.primaryRole }} · Last sign in {{ u.lastSignInAt ? (u.lastSignInAt | relativeTime) : 'never' }}
+        </p>
+      </div>
+
+      <div class="identity__stats">
+        <div class="identity__stat">
+          <span class="identity__stat-value">{{ accessSummary().organizations }}</span>
+          <span class="identity__stat-label">Organizations</span>
+        </div>
+        <div class="identity__stat">
+          <span class="identity__stat-value">{{ accessSummary().tenants }}</span>
+          <span class="identity__stat-label">Tenants</span>
+        </div>
+        <div class="identity__stat">
+          <span class="identity__stat-value">{{ accessSummary().roles }}</span>
+          <span class="identity__stat-label">Roles</span>
+        </div>
+        <div class="identity__stat">
+          <span class="identity__stat-value">{{ accessSummary().permissions }}</span>
+          <span class="identity__stat-label">Permissions</span>
+        </div>
+      </div>
+    </section>
+
+    <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="User sections" />
+
+    <!-- ============ Overview ============ -->
+    @switch (activeTab()) {
+      @case ('overview') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Account" description="Directory attributes held by Centaiva Identity">
+            <ctv-definition-list [items]="overviewItems()" />
+          </ctv-section-card>
+
+          <ctv-section-card title="Effective access" description="Resolved from every role assignment across the hierarchy">
+            <div class="access-summary">
+              <div class="access-row">
+                <span class="access-row__label">Platform scope</span>
+                <span class="access-row__value">{{ u.primaryRole }}</span>
+              </div>
+              <div class="access-row">
+                <span class="access-row__label">Organizations</span>
+                <span class="access-row__value">{{ accessSummary().organizations }} membership(s)</span>
+              </div>
+              <div class="access-row">
+                <span class="access-row__label">Tenants</span>
+                <span class="access-row__value">{{ accessSummary().tenants }} membership(s)</span>
+              </div>
+              <div class="access-row">
+                <span class="access-row__label">Products entitled</span>
+                <span class="access-row__value">{{ accessSummary().products }}</span>
+              </div>
+              <div class="access-row">
+                <span class="access-row__label">Effective permissions</span>
+                <span class="access-row__value">{{ accessSummary().permissions }}</span>
+              </div>
+            </div>
+
+            <div class="permission-preview">
+              <span class="eyebrow">Highest risk permissions</span>
+              <div class="perm-chips">
+                @for (grant of effectivePermissions().slice(0, 10); track grant.permissionKey) {
+                  <span class="chip chip--code">{{ grant.permissionKey }}</span>
+                }
+                @if (effectivePermissions().length === 0) {
+                  <span class="u-dim">No permissions resolved for this user.</span>
+                }
+              </div>
+            </div>
+          </ctv-section-card>
+        </div>
+      }
+
+      <!-- ============ Organizations ============ -->
+      @case ('organizations') {
+        <ctv-section-card title="Organization memberships" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Organization</th>
+                  <th>Key</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (membership of u.organizations; track membership.id) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/app/organizations', membership.id]" class="cell-primary">{{ membership.name }}</a>
+                    </td>
+                    <td><span class="chip chip--code">{{ membership.key }}</span></td>
+                    <td>{{ membership.role }}</td>
+                    <td class="cell-sub">{{ membership.joinedAt | date: 'dd MMM yyyy' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4"><span class="u-dim">No organization memberships.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Tenants ============ -->
+      @case ('tenants') {
+        <ctv-section-card title="Tenant memberships" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Tenant</th>
+                  <th>Key</th>
+                  <th>Role</th>
+                  <th>Joined</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (membership of u.tenants; track membership.id) {
+                  <tr>
+                    <td>
+                      <a [routerLink]="['/app/tenants', membership.id]" class="cell-primary">{{ membership.name }}</a>
+                    </td>
+                    <td><span class="chip chip--code">{{ membership.key }}</span></td>
+                    <td>{{ membership.role }}</td>
+                    <td class="cell-sub">{{ membership.joinedAt | date: 'dd MMM yyyy' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4"><span class="u-dim">No tenant memberships.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Roles ============ -->
+      @case ('roles') {
+        <ctv-section-card title="Role assignments" description="Roles resolved for this principal" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Role</th>
+                  <th>Scope</th>
+                  <th>Application</th>
+                  <th class="td-num">Permissions</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (role of assignedRoles(); track role.id) {
+                  <tr>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="cell-primary">{{ role.name }}</span>
+                        <span class="cell-sub u-truncate">{{ role.description }}</span>
+                      </span>
+                    </td>
+                    <td><ctv-status-badge [status]="role.scope" [dot]="false" /></td>
+                    <td class="cell-sub">{{ role.applicationName }}</td>
+                    <td class="td-num">{{ role.permissionCount }}</td>
+                    <td><ctv-status-badge [status]="role.status" /></td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5"><span class="u-dim">No roles assigned.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Permissions ============ -->
+      @case ('permissions') {
+        <ctv-section-card
+          title="Effective permissions"
+          description="The union of every granted permission across assigned roles"
+          padding="flush"
+        >
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Permission</th>
+                  <th>Module</th>
+                  <th>Feature</th>
+                  <th style="width: 110px">Granted</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (grant of effectivePermissions(); track grant.permissionKey) {
+                  <tr>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="chip chip--code">{{ grant.permissionKey }}</span>
+                        <span class="cell-sub">{{ grant.permissionName }}</span>
+                      </span>
+                    </td>
+                    <td class="cell-sub">{{ grant.module }}</td>
+                    <td class="cell-sub">{{ grant.feature }}</td>
+                    <td><ctv-status-badge status="Granted" /></td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="4"><span class="u-dim">No permissions resolved.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Products ============ -->
+      @case ('products') {
+        <ctv-section-card title="Entitled products" description="Products this user can access through their memberships">
+          <div class="grid grid--auto">
+            @for (product of u.productKeys; track product) {
+              <div class="product-card">
+                <span class="product-card__icon"><i class="pi pi-box" aria-hidden="true"></i></span>
+                <span class="cell-stack">
+                  <span class="cell-primary">{{ product }}</span>
+                  <span class="cell-sub">Access via tenant membership</span>
+                </span>
+              </div>
+            } @empty {
+              <ctv-empty-state icon="pi pi-box" title="No product access" message="This user has no product entitlements yet." [compact]="true" />
+            }
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Security ============ -->
+      @case ('security') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Authentication posture">
+            <div class="kv-rows">
+              <div class="kv-row">
+                <span class="kv-row__label">Multi-factor authentication</span>
+                <span class="kv-row__value"><ctv-status-badge [status]="u.mfa" [dot]="false" /></span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Email verified</span>
+                <span class="kv-row__value">{{ u.emailVerified ? 'Yes' : 'No' }}</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Last sign-in IP</span>
+                <span class="kv-row__value u-mono">{{ u.lastSignInIp ?? '—' }}</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Default environment</span>
+                <span class="kv-row__value">{{ u.defaultEnvironment }}</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Active sessions</span>
+                <span class="kv-row__value">{{ u.sessions.length }}</span>
+              </div>
+            </div>
+          </ctv-section-card>
+
+          <ctv-section-card title="Recent security events" padding="flush">
+            <div class="table-wrap">
+              <table class="ctv-table" style="min-width: 420px">
+                <thead>
+                  <tr>
+                    <th>Event</th>
+                    <th>Detail</th>
+                    <th style="width: 130px">When</th>
+                    <th style="width: 110px">Outcome</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (event of u.securityEvents; track event.id) {
+                    <tr>
+                      <td class="cell-primary">{{ event.event }}</td>
+                      <td class="cell-sub">{{ event.detail }}</td>
+                      <td class="cell-sub">{{ event.timestamp | relativeTime }}</td>
+                      <td><ctv-status-badge [status]="event.outcome" /></td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </ctv-section-card>
+        </div>
+      }
+
+      <!-- ============ Sessions ============ -->
+      @case ('sessions') {
+        <ctv-section-card title="Active sessions" description="Sessions currently held across Centaiva products" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Device</th>
+                  <th>Browser</th>
+                  <th>IP address</th>
+                  <th>Location</th>
+                  <th>Started</th>
+                  <th>Last active</th>
+                  <th class="td-actions"></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (session of u.sessions; track session.id) {
+                  <tr>
+                    <td>
+                      <span class="cell-stack">
+                        <span class="cell-primary">{{ session.device }}</span>
+                        @if (session.current) {
+                          <span class="cell-sub">Current session</span>
+                        }
+                      </span>
+                    </td>
+                    <td class="cell-sub">{{ session.browser }}</td>
+                    <td class="u-mono">{{ session.ipAddress }}</td>
+                    <td class="cell-sub">{{ session.location }}</td>
+                    <td class="cell-sub">{{ session.startedAt | relativeTime }}</td>
+                    <td class="cell-sub">{{ session.lastActiveAt | relativeTime }}</td>
+                    <td class="td-actions">
+                      <button type="button" class="btn btn--ghost btn--sm" (click)="revokeSession(session.id)">Revoke</button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7"><span class="u-dim">No active sessions.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ============ Audit ============ -->
+      @case ('audit') {
+        <ctv-section-card title="Audit history" description="Platform events involving this principal" padding="flush">
+          <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/audit">Open audit log</a>
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px">Timestamp</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th class="u-hide-tablet">Tenant</th>
+                  <th style="width: 110px">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (event of auditEvents(); track event.id) {
+                  <tr>
+                    <td class="cell-sub">{{ event.timestamp | relativeTime }}</td>
+                    <td><span class="chip chip--code">{{ event.action }}</span></td>
+                    <td class="u-truncate">{{ event.entityName }}</td>
+                    <td class="u-hide-tablet cell-sub u-truncate">{{ event.tenantName }}</td>
+                    <td><ctv-status-badge [status]="event.outcome" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+    }
+  </div>
+
+  <ctv-confirm-dialog
+    [(visible)]="confirmDisableOpen"
+    [title]="u.status === 'Disabled' ? 'Enable this user?' : 'Disable this user?'"
+    [message]="u.status === 'Disabled'
+      ? 'Enabling ' + u.displayName + ' restores sign-in across every entitled product.'
+      : 'Disabling ' + u.displayName + ' revokes every active session immediately.'"
+    [confirmLabel]="u.status === 'Disabled' ? 'Enable user' : 'Disable user'"
+    [tone]="u.status === 'Disabled' ? 'primary' : 'danger'"
+    (confirmed)="disable()"
+  />
+}

@@ -1,0 +1,180 @@
+<div class="page">
+  <ctv-page-header
+    title="Product Catalog"
+    subtitle="The full decomposition of every Centaiva product: applications, modules, features and the permissions roles bind to."
+  >
+    <div slot="actions" class="btn-group">
+      <button type="button" class="btn" (click)="collapseAll()">
+        <i class="pi pi-angle-double-up" aria-hidden="true"></i>
+        Collapse all
+      </button>
+      <button type="button" class="btn" (click)="expandAll()">
+        <i class="pi pi-angle-double-down" aria-hidden="true"></i>
+        Expand all
+      </button>
+    </div>
+  </ctv-page-header>
+
+  <div class="catalog-legend card">
+    <div class="legend-step legend-step--product"><i class="pi pi-box" aria-hidden="true"></i> Product <span>{{ stats().products }}</span></div>
+    <i class="pi pi-angle-right legend-arrow" aria-hidden="true"></i>
+    <div class="legend-step legend-step--application"><i class="pi pi-desktop" aria-hidden="true"></i> Application <span>{{ stats().applications }}</span></div>
+    <i class="pi pi-angle-right legend-arrow" aria-hidden="true"></i>
+    <div class="legend-step legend-step--module"><i class="pi pi-th-large" aria-hidden="true"></i> Module <span>{{ stats().modules }}</span></div>
+    <i class="pi pi-angle-right legend-arrow" aria-hidden="true"></i>
+    <div class="legend-step legend-step--feature"><i class="pi pi-sparkles" aria-hidden="true"></i> Feature <span>{{ stats().features }}</span></div>
+    <i class="pi pi-angle-right legend-arrow" aria-hidden="true"></i>
+    <div class="legend-step legend-step--permission"><i class="pi pi-key" aria-hidden="true"></i> Permission <span>{{ stats().permissions }}</span></div>
+  </div>
+
+  <div class="catalog-layout">
+    <aside class="card catalog-tree">
+      <div class="catalog-tree__head">
+        <ctv-search-input [(value)]="search" placeholder="Search the catalog" [width]="0" />
+      </div>
+
+      <div class="catalog-tree__body scroll-y" role="tree" aria-label="Product catalog">
+        @if (loading()) {
+          @for (line of [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]; track line) {
+            <div class="skeleton" style="height: 14px; margin: 9px 12px"></div>
+          }
+        } @else {
+          @for (node of visibleRows(); track node.id) {
+            <div
+              class="cat-row"
+              [class.cat-row--selected]="selectedId() === node.id"
+              [class]="'cat-row cat-row--' + node.level + (selectedId() === node.id ? ' cat-row--selected' : '')"
+              [style.padding-left.px]="10 + node.depth * 16"
+              role="treeitem"
+              [attr.aria-expanded]="node.children.length ? isExpanded(node) : null"
+              tabindex="0"
+              (click)="select(node)"
+              (keydown.enter)="select(node)"
+            >
+              @if (node.children.length) {
+                <button
+                  type="button"
+                  class="cat-row__toggle"
+                  [attr.aria-label]="isExpanded(node) ? 'Collapse' : 'Expand'"
+                  (click)="toggle(node, $event)"
+                >
+                  <i class="pi" [class.pi-chevron-down]="isExpanded(node)" [class.pi-chevron-right]="!isExpanded(node)" aria-hidden="true"></i>
+                </button>
+              } @else {
+                <span class="cat-row__toggle cat-row__toggle--leaf"></span>
+              }
+
+              <span class="cat-row__icon"><i [class]="levelIcon(node.level)" aria-hidden="true"></i></span>
+              <span class="cat-row__label u-truncate">{{ node.label }}</span>
+              @if (node.level === 'permission') {
+                <span class="cat-row__risk">{{ node.status }}</span>
+              } @else if (node.children.length) {
+                <span class="cat-row__count">{{ node.children.length }}</span>
+              }
+            </div>
+          } @empty {
+            <ctv-empty-state icon="pi pi-search" title="No catalog matches" message="Try a different search term." [compact]="true" />
+          }
+        }
+      </div>
+    </aside>
+
+    <section class="catalog-detail">
+      @if (selected(); as node) {
+        <div class="card detail-head">
+          <div class="detail-head__row">
+            <span class="detail-head__icon" [class]="'detail-head__icon--' + node.level">
+              <i [class]="levelIcon(node.level)" aria-hidden="true"></i>
+            </span>
+            <div class="detail-head__text">
+              <span class="eyebrow">{{ levelLabel(node.level) }}</span>
+              <h2 class="detail-head__name">{{ node.label }}</h2>
+              <p class="detail-head__path">
+                @for (crumb of selectedPath(); track $index; let last = $last) {
+                  <span>{{ crumb }}</span>
+                  @if (!last) {
+                    <i class="pi pi-angle-right" aria-hidden="true"></i>
+                  }
+                }
+              </p>
+            </div>
+            @if (node.status) {
+              <ctv-status-badge [status]="node.status" />
+            }
+          </div>
+        </div>
+
+        <ctv-section-card title="Details">
+          <ctv-definition-list [items]="detailItems()" [columns]="2" />
+          @if (description()) {
+            <p class="u-muted u-mt-4">{{ description() }}</p>
+          }
+        </ctv-section-card>
+
+        @if (node.children.length) {
+          <ctv-section-card
+            [title]="levelLabel(node.children[0].level) + 's'"
+            [description]="node.children.length + ' item(s) beneath ' + node.label"
+            padding="flush"
+          >
+            <div class="table-wrap">
+              <table class="ctv-table" style="min-width: 100%">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Key</th>
+                    <th>Detail</th>
+                    <th style="width: 120px">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (child of node.children; track child.id) {
+                    <tr class="is-clickable" (click)="select(child)">
+                      <td class="cell-primary">{{ child.label }}</td>
+                      <td><span class="chip chip--code">{{ child.key }}</span></td>
+                      <td class="cell-sub">{{ child.meta }}</td>
+                      <td>
+                        @if (child.status) {
+                          <ctv-status-badge [status]="child.status" />
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </ctv-section-card>
+        } @else {
+          <ctv-section-card title="Binding" description="This node is a leaf — roles bind directly to it">
+            <div class="kv-rows">
+              <div class="kv-row">
+                <span class="kv-row__label">Permission key</span>
+                <span class="kv-row__value u-mono">{{ node.key }}</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Description</span>
+                <span class="kv-row__value">{{ node.meta }}</span>
+              </div>
+              <div class="kv-row">
+                <span class="kv-row__label">Risk classification</span>
+                <span class="kv-row__value">
+                  @if (node.status) {
+                    <ctv-status-badge [status]="node.status" [dot]="false" />
+                  }
+                </span>
+              </div>
+            </div>
+          </ctv-section-card>
+        }
+      } @else {
+        <div class="card">
+          <ctv-empty-state
+            icon="pi pi-th-large"
+            title="Select a catalog node"
+            message="Pick a product, application, module, feature or permission to inspect it."
+          />
+        </div>
+      }
+    </section>
+  </div>
+</div>

@@ -1,0 +1,144 @@
+<header class="header">
+  <div class="header__left">
+    <button
+      type="button"
+      class="btn btn--ghost btn--icon header__toggle-desktop"
+      aria-label="Toggle sidebar"
+      pTooltip="Toggle sidebar"
+      tooltipPosition="bottom"
+      (click)="toggleSidebar()"
+    >
+      <i class="pi pi-bars" aria-hidden="true"></i>
+    </button>
+
+    <button
+      type="button"
+      class="btn btn--ghost btn--icon header__toggle-mobile"
+      aria-label="Open navigation"
+      (click)="openMobileNav()"
+    >
+      <i class="pi pi-bars" aria-hidden="true"></i>
+    </button>
+
+    <div class="header__titles">
+      <ctv-breadcrumb [items]="crumbs()" />
+      <h1 class="header__title">{{ pageTitle() }}</h1>
+    </div>
+  </div>
+
+  <div class="header__right">
+    <div class="header__search" [class.header__search--active]="searchFocused()">
+      <i class="pi pi-search" aria-hidden="true"></i>
+      <input
+        type="search"
+        class="input"
+        placeholder="Search the platform"
+        aria-label="Search the platform"
+        [value]="searchTerm()"
+        (input)="onSearch($event)"
+        (focus)="searchFocused.set(true)"
+        (blur)="searchFocused.set(false)"
+      />
+      <kbd class="header__kbd">⌘K</kbd>
+
+      @if (searchFocused() && searchResults().length) {
+        <div class="search-results" role="listbox">
+          <span class="search-results__label">Go to</span>
+          @for (result of searchResults(); track result.route) {
+            <button type="button" class="search-results__item" role="option" (mousedown)="goTo(result.route)">
+              <i [class]="result.icon" aria-hidden="true"></i>
+              <span class="search-results__name">{{ result.label }}</span>
+              <span class="search-results__group">{{ result.group }}</span>
+            </button>
+          }
+        </div>
+      }
+    </div>
+
+    <button type="button" class="btn btn--primary btn--sm header__create" (click)="createPanel.toggle($event)">
+      <i class="pi pi-plus" aria-hidden="true"></i>
+      <span class="header__create-label">Create</span>
+      <i class="pi pi-angle-down" aria-hidden="true"></i>
+    </button>
+
+    <p-popover #createPanel styleClass="ctv-popover">
+      <div class="quick-create">
+        <span class="quick-create__label">Quick create</span>
+        @for (action of quickActions; track action.label) {
+          <button type="button" class="quick-create__item" (click)="runQuickAction(action.route, action.label)">
+            <span class="quick-create__icon"><i [class]="action.icon" aria-hidden="true"></i></span>
+            <span class="quick-create__text">
+              <span class="quick-create__name">{{ action.label }}</span>
+              <span class="quick-create__desc">{{ action.description }}</span>
+            </span>
+          </button>
+        }
+      </div>
+    </p-popover>
+
+    <button
+      type="button"
+      class="btn btn--ghost btn--icon header__bell"
+      aria-label="Notifications"
+      pTooltip="Notifications"
+      tooltipPosition="bottom"
+      (click)="notificationPanel.toggle($event)"
+    >
+      <i class="pi pi-bell" aria-hidden="true"></i>
+      <span class="header__dot" aria-hidden="true"></span>
+    </button>
+
+    <p-popover #notificationPanel styleClass="ctv-popover">
+      <div class="notifications">
+        <div class="notifications__head">
+          <span class="notifications__title">Notifications</span>
+          <button type="button" class="btn btn--ghost btn--sm" (click)="dismissNotifications()">Mark all read</button>
+        </div>
+        @for (item of notificationItems; track item.id) {
+          <div class="notifications__item">
+            <span class="notifications__icon" [class]="'notifications__icon--' + item.tone">
+              <i [class]="item.icon" aria-hidden="true"></i>
+            </span>
+            <div class="notifications__body">
+              <span class="notifications__name">{{ item.title }}</span>
+              <span class="notifications__detail">{{ item.detail }}</span>
+              <span class="notifications__time">{{ item.time }}</span>
+            </div>
+          </div>
+        }
+      </div>
+    </p-popover>
+
+    <button
+      type="button"
+      class="btn btn--ghost btn--icon header__help"
+      aria-label="Help and documentation"
+      pTooltip="Help & documentation"
+      tooltipPosition="bottom"
+      (click)="notImplemented('Help centre')"
+    >
+      <i class="pi pi-question-circle" aria-hidden="true"></i>
+    </button>
+
+    <span class="env-badge" [attr.title]="'Active environment: ' + session.environment()">
+      <span class="env-badge__dot" aria-hidden="true"></span>
+      {{ session.environment() }}
+    </span>
+
+    <button
+      type="button"
+      class="profile"
+      aria-label="Account menu"
+      (click)="profileMenu.toggle($event)"
+    >
+      <span class="profile__avatar" aria-hidden="true">{{ session.initials() }}</span>
+      <span class="profile__text">
+        <span class="profile__name">{{ session.displayName() }}</span>
+        <span class="profile__role">{{ session.roleLabel() }}</span>
+      </span>
+      <i class="pi pi-angle-down profile__chevron" aria-hidden="true"></i>
+    </button>
+
+    <p-menu #profileMenu [model]="profileMenuItems" [popup]="true" appendTo="body" />
+  </div>
+</header>

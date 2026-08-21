@@ -1,0 +1,480 @@
+@if (loading()) {
+  <div class="page">
+    <div class="card"><div class="card__body"><ctv-loading-skeleton [rowCount]="5" /></div></div>
+  </div>
+} @else if (!tenant()) {
+  <div class="page">
+    <ctv-empty-state icon="pi pi-building" title="Tenant not found" message="This tenant may have been archived.">
+      <button type="button" class="btn btn--primary" (click)="back()">Back to tenants</button>
+    </ctv-empty-state>
+  </div>
+} @else if (tenant(); as t) {
+  <div class="page">
+    <ctv-page-header
+      [title]="t.name"
+      [crumbs]="[{ label: 'Tenants', link: '/app/tenants' }, { label: t.name }]"
+    >
+      <div slot="actions" class="btn-group">
+        <button type="button" class="btn" (click)="action('Provisioning queued', 'A provisioning run was queued for ' + t.name + '.')">
+          <i class="pi pi-bolt" aria-hidden="true"></i>
+          Run Provisioning
+        </button>
+        <button type="button" class="btn" (click)="action('Edit tenant', 'The edit form opens during API integration.')">
+          <i class="pi pi-pencil" aria-hidden="true"></i>
+          Edit
+        </button>
+        <button type="button" class="btn btn--primary" (click)="action('Subscription drafted', 'A new subscription draft was created for ' + t.name + '.')">
+          <i class="pi pi-plus" aria-hidden="true"></i>
+          Add Subscription
+        </button>
+      </div>
+    </ctv-page-header>
+
+    <section class="tenant-head card">
+      <ctv-entity-avatar [name]="t.name" [size]="52" />
+      <div class="tenant-head__text">
+        <div class="tenant-head__row">
+          <h2 class="tenant-head__name">{{ t.name }}</h2>
+          <ctv-status-badge [status]="t.status" />
+          <span class="chip">{{ t.environment }}</span>
+        </div>
+        <p class="tenant-head__meta">
+          <a [routerLink]="['/app/organizations', t.organizationId]">{{ t.organizationName }}</a>
+          · {{ t.region }} · <span class="u-mono">{{ t.key }}</span>
+        </p>
+      </div>
+
+      <div class="tenant-head__stats">
+        <div class="tenant-stat">
+          <span class="tenant-stat__value">{{ t.memberCount }}</span>
+          <span class="tenant-stat__label">Members</span>
+        </div>
+        <div class="tenant-stat">
+          <span class="tenant-stat__value">{{ t.productKeys.length }}</span>
+          <span class="tenant-stat__label">Products</span>
+        </div>
+        <div class="tenant-stat">
+          <span class="tenant-stat__value">{{ tenantSubscriptions().length }}</span>
+          <span class="tenant-stat__label">Subscriptions</span>
+        </div>
+        <div class="tenant-stat tenant-stat--meter">
+          <ctv-metric-progress
+            label="Licence seats"
+            [used]="t.licenseSeatsUsed"
+            [total]="t.licenseSeats"
+          />
+        </div>
+      </div>
+    </section>
+
+    <ctv-tab-nav [tabs]="tabs()" [(active)]="activeTab" ariaLabel="Tenant sections" />
+
+    @switch (activeTab()) {
+      <!-- ---------- Overview ---------- -->
+      @case ('overview') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Tenant" description="Registry attributes and routing context">
+            <ctv-definition-list [items]="overviewCards()" />
+          </ctv-section-card>
+
+          <div class="stack">
+            <ctv-section-card title="Capacity">
+              <div class="capacity">
+                <ctv-metric-progress
+                  label="Licence seats"
+                  [used]="t.licenseSeatsUsed"
+                  [total]="t.licenseSeats"
+                  size="lg"
+                />
+                <ctv-metric-progress
+                  label="Document storage"
+                  [used]="t.storageUsedGb"
+                  [total]="t.storageQuotaGb"
+                  [valueText]="t.storageUsedGb + ' GB / ' + t.storageQuotaGb + ' GB'"
+                  size="lg"
+                />
+              </div>
+            </ctv-section-card>
+
+            <ctv-section-card title="Subscription position">
+              <div class="kv-rows">
+                <div class="kv-row">
+                  <span class="kv-row__label">Subscription status</span>
+                  <span class="kv-row__value"><ctv-status-badge [status]="t.subscriptionStatus" /></span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Active licences</span>
+                  <span class="kv-row__value">{{ tenantLicenses().length }}</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Created</span>
+                  <span class="kv-row__value">{{ t.createdAt | date: 'dd MMM yyyy' }}</span>
+                </div>
+                <div class="kv-row">
+                  <span class="kv-row__label">Data routes</span>
+                  <span class="kv-row__value">{{ t.dataRoutes.length }}</span>
+                </div>
+              </div>
+            </ctv-section-card>
+          </div>
+        </div>
+      }
+
+      <!-- ---------- Members ---------- -->
+      @case ('members') {
+        <ctv-section-card title="Tenant members" description="Users with access to this tenant workspace" padding="flush">
+          <button slot="actions" type="button" class="btn btn--sm btn--primary" (click)="action('Invitation sent', 'A tenant invitation was queued.')">
+            <i class="pi pi-user-plus" aria-hidden="true"></i>
+            Invite member
+          </button>
+
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Member</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th class="u-hide-tablet">Products</th>
+                  <th>Status</th>
+                  <th>Last active</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (member of t.members; track member.id) {
+                  <tr>
+                    <td>
+                      <div class="member-cell">
+                        <ctv-entity-avatar [name]="member.name" [size]="28" />
+                        <span class="cell-primary">{{ member.name }}</span>
+                      </div>
+                    </td>
+                    <td class="cell-sub">{{ member.email }}</td>
+                    <td>{{ member.role }}</td>
+                    <td class="u-hide-tablet">
+                      @for (product of member.products; track product) {
+                        <span class="chip">{{ product }}</span>
+                      }
+                    </td>
+                    <td><ctv-status-badge [status]="member.status" /></td>
+                    <td class="cell-sub">{{ member.lastActiveAt | relativeTime }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6"><span class="u-dim">No members yet.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Products ---------- -->
+      @case ('products') {
+        <div class="grid grid--auto-lg">
+          @for (product of t.products; track product.productKey) {
+            <div class="card product-panel">
+              <div class="card__body">
+                <div class="product-panel__head">
+                  <span class="product-panel__icon"><i class="pi pi-box" aria-hidden="true"></i></span>
+                  <div class="cell-stack">
+                    <span class="cell-primary">{{ product.productName }}</span>
+                    <span class="cell-sub">{{ product.planName }} plan · activated {{ product.activatedAt | relativeTime }}</span>
+                  </div>
+                  <ctv-status-badge [status]="product.status" />
+                </div>
+                <div class="u-mt-4">
+                  <ctv-metric-progress label="Seats" [used]="product.seatsUsed" [total]="product.seats" />
+                </div>
+              </div>
+            </div>
+          } @empty {
+            <ctv-empty-state icon="pi pi-box" title="No products" message="This tenant has no product entitlements yet." />
+          }
+        </div>
+      }
+
+      <!-- ---------- Subscriptions ---------- -->
+      @case ('subscriptions') {
+        <ctv-section-card title="Subscriptions" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Product</th>
+                  <th>Plan</th>
+                  <th>Status</th>
+                  <th class="td-num">Seats</th>
+                  <th>Period end</th>
+                  <th>Auto renew</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (subscription of tenantSubscriptions(); track subscription.id) {
+                  <tr class="is-clickable" [routerLink]="['/app/subscriptions', subscription.id]">
+                    <td><span class="chip chip--code">{{ subscription.reference }}</span></td>
+                    <td class="cell-primary">{{ subscription.productName }}</td>
+                    <td>{{ subscription.planName }}</td>
+                    <td><ctv-status-badge [status]="subscription.status" /></td>
+                    <td class="td-num">{{ subscription.seatsUsed }}/{{ subscription.seats }}</td>
+                    <td class="cell-sub">{{ subscription.periodEnd | date: 'dd MMM yyyy' }}</td>
+                    <td>
+                      <ctv-status-badge [status]="subscription.autoRenew ? 'Active' : 'Disabled'" [dot]="false" />
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7"><span class="u-dim">No subscriptions.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Licenses ---------- -->
+      @case ('licenses') {
+        <ctv-section-card title="Licences" description="Licences issued against this tenant's subscriptions" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Key</th>
+                  <th>Product</th>
+                  <th>Type</th>
+                  <th class="td-num">Seats</th>
+                  <th class="td-num">Activations</th>
+                  <th>Status</th>
+                  <th>Expires</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (license of tenantLicenses(); track license.id) {
+                  <tr class="is-clickable" [routerLink]="['/app/licenses', license.id]">
+                    <td><span class="chip chip--code">{{ license.reference }}</span></td>
+                    <td><ctv-masked-value [value]="license.maskedKey" label="licence key" /></td>
+                    <td class="cell-primary">{{ license.productName }}</td>
+                    <td>{{ license.type }}</td>
+                    <td class="td-num">{{ license.seatsUsed }}/{{ license.seatLimit }}</td>
+                    <td class="td-num">{{ license.activationCount }}/{{ license.activationLimit }}</td>
+                    <td><ctv-status-badge [status]="license.status" /></td>
+                    <td class="cell-sub">{{ license.expiresAt | date: 'dd MMM yyyy' }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="8"><span class="u-dim">No licences issued.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Entitlements ---------- -->
+      @case ('entitlements') {
+        <ctv-section-card
+          title="Effective entitlements"
+          description="Resolved from the subscribed plan versions for this tenant"
+          padding="flush"
+        >
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Entitlement</th>
+                  <th>Key</th>
+                  <th>Product</th>
+                  <th>Type</th>
+                  <th>Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (entitlement of tenantEntitlements(); track entitlement.id) {
+                  <tr>
+                    <td class="cell-primary">{{ entitlement.name }}</td>
+                    <td><span class="chip chip--code">{{ entitlement.key }}</span></td>
+                    <td class="cell-sub">{{ entitlement.productName }}</td>
+                    <td>{{ entitlement.type }}</td>
+                    <td class="u-strong">{{ entitlementValueFor(entitlement) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Data routing ---------- -->
+      @case ('routing') {
+        <div class="grid grid--2">
+          <ctv-section-card title="Routing resolution" description="How this tenant resolves to physical storage">
+            <div class="routing-diagram">
+              <div class="routing-box routing-box--input">Tenant<span>{{ t.key }}</span></div>
+              <div class="routing-plus">+</div>
+              <div class="routing-box routing-box--input">Product<span>{{ t.productKeys[0] ?? '—' }}</span></div>
+              <div class="routing-plus">+</div>
+              <div class="routing-box routing-box--input">Environment<span>{{ t.environment }}</span></div>
+              <div class="routing-arrow"><i class="pi pi-arrow-down" aria-hidden="true"></i></div>
+              <div class="routing-box routing-box--mid">Deployment<span>{{ t.dataRoutes[0]?.deploymentName ?? '—' }}</span></div>
+              <div class="routing-arrow"><i class="pi pi-arrow-down" aria-hidden="true"></i></div>
+              <div class="routing-box routing-box--out">Data Store<span>{{ t.dataRoutes[0]?.dataStoreName ?? '—' }}</span></div>
+            </div>
+          </ctv-section-card>
+
+          <ctv-section-card title="Data routes" description="One route per product and environment pair" padding="flush">
+            <div class="table-wrap">
+              <table class="ctv-table" style="min-width: 460px">
+                <thead>
+                  <tr>
+                    <th>Product</th>
+                    <th>Environment</th>
+                    <th>Deployment</th>
+                    <th>Data store</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (route of t.dataRoutes; track route.productKey) {
+                    <tr>
+                      <td class="cell-primary">{{ route.productName }}</td>
+                      <td><span class="chip">{{ route.environment }}</span></td>
+                      <td class="cell-sub u-truncate">{{ route.deploymentName }}</td>
+                      <td class="u-mono">{{ route.dataStoreName }}</td>
+                    </tr>
+                  } @empty {
+                    <tr><td colspan="4"><span class="u-dim">No routes configured.</span></td></tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </ctv-section-card>
+        </div>
+      }
+
+      <!-- ---------- Integrations ---------- -->
+      @case ('integrations') {
+        <ctv-section-card title="Tenant integrations" description="Connectors configured for this tenant" padding="flush">
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Product</th>
+                  <th>Environment</th>
+                  <th>Connection</th>
+                  <th>Status</th>
+                  <th>Last sync</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (integration of integrationRows(); track integration.id) {
+                  <tr>
+                    <td class="cell-primary">{{ integration.providerName }}</td>
+                    <td class="cell-sub">{{ integration.productName }}</td>
+                    <td><span class="chip">{{ integration.environment }}</span></td>
+                    <td><ctv-masked-value [value]="integration.connectionMasked" label="connection" [copyable]="false" /></td>
+                    <td><ctv-status-badge [status]="integration.status" /></td>
+                    <td class="cell-sub">{{ integration.lastSyncAt | relativeTime }}</td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="6"><span class="u-dim">No integrations configured.</span></td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Security ---------- -->
+      @case ('security') {
+        <ctv-section-card
+          title="Authentication policy"
+          description="Applies to every principal signing in to this tenant"
+        >
+          <form class="policy" [formGroup]="policyForm" novalidate>
+            <div class="switch-row">
+              <div class="switch-row__text">
+                <span class="switch-row__title">Require MFA</span>
+                <span class="switch-row__desc">Every sign-in must satisfy a second factor.</span>
+              </div>
+              <p-toggleswitch formControlName="requireMfa" />
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-row__text">
+                <span class="switch-row__title">Allow password login</span>
+                <span class="switch-row__desc">Disable to force federated identity only.</span>
+              </div>
+              <p-toggleswitch formControlName="allowPasswordLogin" />
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-row__text">
+                <span class="switch-row__title">Allow external identity providers</span>
+                <span class="switch-row__desc">Permit Entra ID, Google Workspace and OIDC federation.</span>
+              </div>
+              <p-toggleswitch formControlName="allowExternalIdentityProviders" />
+            </div>
+
+            <div class="switch-row">
+              <div class="switch-row__text">
+                <span class="switch-row__title">Require verified email</span>
+                <span class="switch-row__desc">Block sign-in until the address is confirmed.</span>
+              </div>
+              <p-toggleswitch formControlName="requireVerifiedEmail" />
+            </div>
+
+            <div class="form-grid u-mt-4">
+              <div class="field">
+                <label class="field__label">Session timeout (minutes)</label>
+                <p-inputNumber formControlName="sessionTimeoutMinutes" [min]="5" [max]="1440" [showButtons]="true" styleClass="w-full" />
+              </div>
+              <div class="field">
+                <label class="field__label">Maximum failed attempts</label>
+                <p-inputNumber formControlName="maxFailedAttempts" [min]="1" [max]="20" [showButtons]="true" styleClass="w-full" />
+              </div>
+              <div class="field">
+                <label class="field__label">Minimum password length</label>
+                <p-inputNumber formControlName="minimumPasswordLength" [min]="8" [max]="64" [showButtons]="true" styleClass="w-full" />
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button type="button" class="btn" (click)="policyForm.reset(t.securityPolicy)">Reset</button>
+              <button type="button" class="btn btn--primary" (click)="savePolicy()">Save policy</button>
+            </div>
+          </form>
+        </ctv-section-card>
+      }
+
+      <!-- ---------- Audit ---------- -->
+      @case ('audit') {
+        <ctv-section-card title="Audit history" padding="flush">
+          <a slot="actions" class="btn btn--ghost btn--sm" routerLink="/app/audit">Open audit log</a>
+          <div class="table-wrap">
+            <table class="ctv-table">
+              <thead>
+                <tr>
+                  <th style="width: 140px">When</th>
+                  <th>Actor</th>
+                  <th>Action</th>
+                  <th>Entity</th>
+                  <th style="width: 110px">Outcome</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (event of auditEvents(); track event.id) {
+                  <tr>
+                    <td class="cell-sub">{{ event.timestamp | relativeTime }}</td>
+                    <td class="u-truncate">{{ event.actorName }}</td>
+                    <td><span class="chip chip--code">{{ event.action }}</span></td>
+                    <td class="cell-sub u-truncate">{{ event.entityName }}</td>
+                    <td><ctv-status-badge [status]="event.outcome" /></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </ctv-section-card>
+      }
+    }
+  </div>
+}

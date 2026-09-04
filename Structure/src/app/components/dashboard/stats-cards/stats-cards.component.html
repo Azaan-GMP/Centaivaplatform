@@ -1,0 +1,38 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+  <div *ngFor="let stat of stats()" [routerLink]="stat.route"
+    class="relative group overflow-hidden rounded-xl p-3 sm:p-3.5 kpi-stat-card cursor-pointer flex items-center justify-between gap-2.5 transition-all duration-200 hover:-translate-y-0.5 shadow-md">
+    <div class="flex items-center gap-3 min-w-0">
+      <!-- Icon Wrapper -->
+      <div
+        class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br border shadow-sm transition-transform group-hover:scale-105"
+        [ngClass]="stat.colorGrad">
+        <app-icon [name]="stat.icon" size="18"></app-icon>
+      </div>
+
+      <!-- Metric & Label -->
+      <div class="min-w-0">
+        <div class="flex items-baseline gap-1.5">
+          <span class="text-xl sm:text-2xl font-black tracking-tight text-white font-display">
+            {{ stat.value }}
+          </span>
+          <span *ngIf="isLoading()"
+            class="inline-block w-3 h-3 border-2 border-[#00D4FF] border-t-transparent rounded-full animate-spin"></span>
+        </div>
+        <p class="text-[10.5px] font-bold uppercase tracking-wider text-slate-400 font-sans truncate">
+          {{ stat.label }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Trend Badge -->
+    <span
+      class="px-2 py-0.5 text-[9.5px] font-bold text-[#00D4FF] bg-[#00D4FF]/10 border border-[#00D4FF]/30 rounded-md font-mono tracking-wider shrink-0 truncate max-w-[125px] shadow-sm">
+      {{ stat.trend }}
+    </span>
+
+    <!-- Hover Gradient Accent Line -->
+    <div
+      class="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#00D4FF] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+    </div>
+  </div>
+</div>

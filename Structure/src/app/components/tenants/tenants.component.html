@@ -1,0 +1,1014 @@
+<div class="space-y-4 pb-6 animate-fadeIn">
+
+  <!-- Top Page Title & Stats Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white font-display">
+          Tenants Directory
+        </h1>
+        <span
+          class="px-2.5 py-0.5 text-xs font-bold font-mono rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm">
+          {{ filteredTenants().length }} Live Partitions
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 font-mono mt-0.5">
+        Multi-Tenant Isolation Boundaries &bull; WorkWell CompId Bridges &bull; Organization Partitions
+      </p>
+    </div>
+
+    <!-- Top Action Buttons -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <button
+        *ngIf="selectedTenantIds().size > 0"
+        type="button"
+        (click)="confirmBulkDelete()"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-800/60 rounded-xl transition-all cursor-pointer shadow-md"
+      >
+        <app-icon name="trash" size="13"></app-icon>
+        <span>Delete ({{ selectedTenantIds().size }})</span>
+      </button>
+
+      <button type="button" (click)="openCreateModal()"
+        class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/20 transition-all active:scale-95 cursor-pointer">
+        <app-icon name="plus" size="14"></app-icon>
+        <span>Provision Tenant</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Filter, Search & View Controls Bar -->
+  <div
+    class="relative z-30 p-3 rounded-2xl tenant-glass-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+
+    <!-- Real-time Search Input -->
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <app-icon name="search" size="14"></app-icon>
+      </div>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+        placeholder="Search by tenant name, identifier, ID, or organization..."
+        class="w-full pl-9 pr-8 py-2 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00D4FF] transition-all font-medium" />
+      <button *ngIf="searchQuery" type="button" (click)="clearSearch()"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-sm">
+        &times;
+      </button>
+    </div>
+
+    <!-- Right Controls: Org + Status + Sort + View Switcher + Refresh -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+
+      <!-- Organization Filter -->
+      <div class="w-40">
+        <app-custom-select [options]="orgOptions" [value]="orgFilter"
+          (valueChange)="onOrgChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="w-32">
+        <app-custom-select [options]="statusOptions" [value]="statusFilter"
+          (valueChange)="onStatusChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Sort Filter -->
+      <div class="w-36">
+        <app-custom-select [options]="sortOptions" [value]="sortBy"
+          (valueChange)="onSortChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Expand All / Collapse All Button -->
+      <button type="button" (click)="toggleExpandAll()"
+        class="px-2.5 py-1.5 rounded-xl border border-[#232328] bg-[#18181c] hover:border-[#00D4FF]/40 text-slate-300 hover:text-[#00D4FF] transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+        [title]="isAllParentsExpanded() ? 'Collapse all tree branches' : 'Expand all tree branches'">
+        <app-icon name="layers" size="13"></app-icon>
+        <span class="text-xs font-bold">{{ isAllParentsExpanded() ? 'Collapse All' : 'Expand All' }}</span>
+      </button>
+
+      <!-- View Switcher (Table vs Hierarchy Tree vs Grid) -->
+      <div class="flex items-center bg-[#18181c] border border-[#232328] rounded-xl p-0.5">
+        <button type="button" (click)="setViewMode('table')"
+          [ngClass]="viewMode() === 'table' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer px-2.5 flex items-center gap-1.5" title="Table View">
+          <app-icon name="table" size="14"></app-icon>
+          <span class="text-xs font-bold">Table</span>
+        </button>
+        <button type="button" (click)="setViewMode('hierarchy')"
+          [ngClass]="viewMode() === 'hierarchy' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer px-2.5 flex items-center gap-1.5" title="Visual Hierarchy Tree View">
+          <app-icon name="layers" size="14"></app-icon>
+          <span class="text-xs font-bold">Hierarchy</span>
+        </button>
+        <button type="button" (click)="setViewMode('grid')"
+          [ngClass]="viewMode() === 'grid' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer px-2.5 flex items-center gap-1.5" title="Grid View">
+          <app-icon name="grid" size="14"></app-icon>
+          <span class="text-xs font-bold">Grid</span>
+        </button>
+      </div>
+
+      <!-- Live Refresh Button -->
+      <button type="button" (click)="loadTenants()" [disabled]="isLoading()"
+        class="p-2 bg-[#18181c] border border-[#27272a] rounded-xl text-slate-400 hover:text-[#00D4FF] hover:border-[#00D4FF]/40 transition-all cursor-pointer disabled:opacity-50"
+        title="Sync live records">
+        <app-icon name="refresh" size="14" [class.animate-spin]="isLoading()"></app-icon>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="p-12 text-center space-y-3">
+    <div class="w-10 h-10 border-2 border-[#00D4FF] border-t-transparent rounded-full animate-spin mx-auto"></div>
+    <p class="text-xs text-slate-400 font-mono">Loading tenant partitions &amp; hierarchy...</p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 1: TABLE VIEW (ARBITRARY-DEPTH RECURSIVE HIERARCHY TREE)             -->
+  <!-- ========================================================================= -->
+  <div *ngIf="!isLoading() && viewMode() === 'table'" class="space-y-3 animate-fadeIn">
+    <div class="rounded-2xl border border-[#232328] bg-[#101013] overflow-hidden shadow-2xl tenant-table-wrapper">
+      <table class="w-full text-left text-xs text-slate-300 font-sans border-collapse">
+
+        <!-- Table Header -->
+        <thead
+          class="bg-[#18181c] border-b border-[#232328] text-[11px] font-mono uppercase tracking-wider text-slate-400">
+          <tr>
+            <th class="py-3.5 px-4 font-bold">Tenant Hierarchy &amp; Depth</th>
+            <th class="py-3.5 px-4 font-bold">Identifier</th>
+            <th class="py-3.5 px-4 font-bold">Parent Organization</th>
+            <th class="py-3.5 px-4 font-bold">CompId Bridge</th>
+            <th class="py-3.5 px-4 font-bold">Users</th>
+            <th class="py-3.5 px-4 font-bold">Status</th>
+            <th class="py-3.5 px-4 font-bold text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <!-- Table Rows -->
+        <tbody class="divide-y divide-[#232328]">
+
+          <tr *ngFor="let tenant of paginatedTableRows()" class="transition-colors group hover:bg-[#18181c] tenant-table-row"
+            [ngClass]="tenant.depth > 0 ? 'bg-[#121217]/60' : ''">
+            
+            <!-- Tenant Name & Icon with Dynamic Depth Indentation & Guide Lines -->
+            <td class="py-3.5 px-4" [style.paddingLeft.px]="16 + (tenant.depth * 28)">
+              <div class="flex items-center gap-2 relative">
+                
+                <!-- Expand / Collapse Button -->
+                <button
+                  *ngIf="tenant.hasChildren"
+                  type="button"
+                  (click)="toggleExpandParent(tenant.id, $event)"
+                  class="w-5 h-5 rounded bg-[#18181c] border border-[#27272a] hover:border-[#00D4FF]/60 text-slate-400 hover:text-[#00D4FF] flex items-center justify-center text-[10px] cursor-pointer transition-all shrink-0 shadow-sm"
+                  [title]="tenant.isExpanded ? 'Collapse Sub-Nodes' : 'Expand Sub-Nodes'"
+                >
+                  <span class="transition-transform duration-150 inline-block font-bold">{{ tenant.isExpanded ? '▼' : '▶' }}</span>
+                </button>
+
+                <span *ngIf="!tenant.hasChildren && tenant.depth === 0" class="w-5 shrink-0"></span>
+                
+                <!-- Tree Branch Connector Icon for Children -->
+                <span *ngIf="!tenant.hasChildren && tenant.depth > 0"
+                  class="text-[#00D4FF]/60 font-mono text-xs shrink-0 select-none font-bold">
+                  └──
+                </span>
+
+                <!-- Avatar with Depth Theme -->
+                <div
+                  class="w-8 h-8 rounded-xl flex items-center justify-center font-mono font-bold text-xs shadow-inner shrink-0"
+                  [ngClass]="tenant.depth === 0 ? 'bg-[#18181c] text-[#00D4FF] border border-[#00D4FF]/40 shadow-[#00D4FF]/10 shadow-md' : (tenant.depth === 1 ? 'bg-sky-950/80 text-sky-300 border border-sky-700/50' : (tenant.depth === 2 ? 'bg-indigo-950/80 text-indigo-300 border border-indigo-700/50' : (tenant.depth === 3 ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-700/50' : 'bg-purple-950/80 text-purple-300 border border-purple-700/50')))">
+                  {{ tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'TN' }}
+                </div>
+                
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span
+                      class="font-bold text-white group-hover:text-[#00D4FF] transition-colors text-xs truncate block">
+                      {{ tenant.name }}
+                    </span>
+
+                    <!-- Sub-Tenants Count Badge -->
+                    <span
+                      *ngIf="tenant.hasChildren"
+                      (click)="toggleExpandParent(tenant.id, $event)"
+                      class="px-2 py-0.5 rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 font-mono text-[9px] font-bold cursor-pointer hover:bg-[#00D4FF]/25 transition-all flex items-center gap-1">
+                      <span>{{ tenant.subTenants.length }} Sub-Tenants</span>
+                      <span class="text-[8px]">{{ tenant.isExpanded ? '▲' : '▼' }}</span>
+                    </span>
+
+                    <!-- Hierarchy Level Badge -->
+                    <span
+                      *ngIf="tenant.depth > 0"
+                      class="px-2 py-0.5 rounded-md font-mono text-[9px] font-bold"
+                      [ngClass]="tenant.depth === 1 ? 'bg-sky-500/15 text-sky-300 border border-sky-500/40' : (tenant.depth === 2 ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/40' : (tenant.depth === 3 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/40' : (tenant.depth === 4 ? 'bg-purple-500/15 text-purple-300 border border-purple-500/40' : 'bg-amber-500/15 text-amber-300 border border-amber-500/40')))">
+                      Level {{ tenant.depth }}
+                    </span>
+                  </div>
+
+                  <!-- Parent Breadcrumb -->
+                  <span class="text-[11px] text-slate-400 block truncate mt-0.5" *ngIf="tenant.parentTenantName">
+                    Parent: <strong class="text-slate-200">{{ tenant.parentTenantName }}</strong>
+                  </span>
+                  <span class="text-[11px] text-slate-500 block truncate mt-0.5" *ngIf="!tenant.parentTenantName && tenant['description']">
+                    {{ tenant['description'] }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Unique Identifier -->
+            <td class="py-3.5 px-4 font-mono">
+              <span
+                class="px-2 py-0.5 bg-[#18181c] border border-[#27272a] rounded text-[#00D4FF] font-bold text-[11px]">
+                {{ tenant.identifier || 'N/A' }}
+              </span>
+            </td>
+
+            <!-- Parent Organization -->
+            <td class="py-3.5 px-4">
+              <span class="px-2.5 py-1 text-[10px] font-semibold rounded font-mono bg-sky-500/10 text-[#00D4FF] border border-[#00D4FF]/30">
+                {{ tenant.organizationName || 'WorkWell Outsourcing' }}
+              </span>
+            </td>
+
+            <!-- CompId Bridge -->
+            <td class="py-3.5 px-4 font-mono">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 bg-[#18181c] border border-sky-500/30 text-sky-300 font-bold rounded text-[11px]">
+                  #{{ tenant.mappedCompId || 'N/A' }}
+                </span>
+                <span class="text-[10px] text-slate-400">CompID</span>
+              </div>
+            </td>
+
+            <!-- User Count -->
+            <td class="py-3.5 px-4 font-mono">
+              <span class="font-bold text-slate-200 text-xs">{{ tenant.userCount || 0 }}</span>
+              <span class="text-[10px] text-slate-400 ml-1">Members</span>
+            </td>
+
+            <!-- Status -->
+            <td class="py-3.5 px-4">
+              <span class="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+                [ngClass]="formatStatus(tenant.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]'">
+                {{ formatStatus(tenant.status) }}
+              </span>
+            </td>
+
+            <!-- Actions (Works on ANY node at any depth!) -->
+            <td class="py-3.5 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button
+                  type="button"
+                  (click)="openCreateSubTenantModal(tenant, $event)"
+                  class="px-2 py-1 text-[10.5px] font-bold text-sky-300 hover:text-white bg-sky-950/40 hover:bg-sky-900/60 border border-sky-800/40 rounded-lg transition-all cursor-pointer"
+                  title="Add Sub-Tenant under this node">
+                  + Sub-Tenant
+                </button>
+                <button type="button" (click)="openEditModal(tenant, $event)"
+                  class="p-1.5 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 border border-transparent hover:border-[#00D4FF]/30 rounded-lg transition-all cursor-pointer"
+                  title="Edit tenant">
+                  <app-icon name="edit" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="confirmDelete(tenant, $event)"
+                  class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/30 rounded-lg transition-all cursor-pointer"
+                  title="Delete tenant">
+                  <app-icon name="trash" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="viewTenant(tenant)"
+                  class="px-3 py-1 text-xs font-bold text-[#00D4FF] hover:text-white hover:bg-[#00D4FF]/20 border border-[#00D4FF]/40 rounded-lg transition-all cursor-pointer">
+                  Details &rarr;
+                </button>
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="paginatedTableRows().length === 0">
+            <td colspan="7" class="text-center py-10 text-slate-400 font-mono">
+              <p class="text-sm font-bold text-slate-300">No tenant partitions found</p>
+              <p class="text-xs text-slate-500 mt-1">Try adjusting your search query, organization, or status filter.</p>
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- Table Pagination Footer with Page Size Selector -->
+    <div
+      class="px-4 py-3 border border-[#232328] rounded-2xl bg-[#101013] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 font-mono tenant-glass-bar shadow-xl">
+      
+      <div class="flex items-center gap-2">
+        <span>
+          Showing <strong class="text-white">{{ paginationStart() }} - {{ paginationEnd() }}</strong> of <strong
+            class="text-[#00D4FF]">{{ visibleTableRows().length }}</strong> visible nodes
+        </span>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap">
+        <!-- Rows per page selector -->
+        <div class="flex items-center gap-1.5">
+          <span class="text-slate-500 text-[11px]">Rows:</span>
+          <select [ngModel]="pageSize().toString()" (ngModelChange)="onPageSizeChange($event)"
+            class="bg-[#18181c] border border-[#27272a] text-slate-200 rounded-lg px-2 py-1 text-xs focus:outline-none focus:border-[#00D4FF] cursor-pointer">
+            <option value="10">10</option>
+            <option value="25">25</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+            <option value="999">All Nodes</option>
+          </select>
+        </div>
+
+        <!-- Prev / Next Pagination Controls -->
+        <div class="flex items-center gap-1">
+          <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+            class="px-3 py-1 rounded-lg border border-[#27272a] bg-[#18181c] text-slate-300 hover:text-white hover:bg-[#232328] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all">
+            &larr; Prev
+          </button>
+          
+          <span class="px-2 font-bold text-slate-200">
+            Page {{ currentPage() }} of {{ totalPages() || 1 }}
+          </span>
+
+          <button type="button" (click)="setPage(currentPage() + 1)"
+            [disabled]="currentPage() === totalPages() || totalPages() === 0"
+            class="px-3 py-1 rounded-lg border border-[#27272a] bg-[#18181c] text-slate-300 hover:text-white hover:bg-[#232328] disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-all">
+            Next &rarr;
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 2: DEDICATED VISUAL RECURSIVE MULTI-TIER HIERARCHY TREE VIEW         -->
+  <!-- ========================================================================= -->
+  <div *ngIf="!isLoading() && viewMode() === 'hierarchy'" class="space-y-4 animate-fadeIn">
+    <div class="grid grid-cols-1 gap-4">
+      
+      <div *ngFor="let root of recursiveTree()" class="p-4 sm:p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-2xl space-y-4">
+        
+        <!-- Root Node Card (Level 0) -->
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#27272a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+          <div class="flex items-center gap-3">
+            <div class="w-11 h-11 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-mono font-black text-sm shadow-md shrink-0">
+              {{ root.name.substring(0, 2).toUpperCase() }}
+            </div>
+            <div>
+              <div class="flex items-center gap-2 flex-wrap">
+                <h3 class="text-sm sm:text-base font-bold text-white font-display">{{ root.name }}</h3>
+                <span class="px-2 py-0.2 rounded-full bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 font-mono text-[9.5px] font-bold">
+                  Root Parent Node
+                </span>
+                <span class="px-2 py-0.2 rounded bg-sky-950/80 text-sky-300 border border-sky-800/40 font-mono text-[9.5px] font-bold">
+                  CompID #{{ root.mappedCompId }}
+                </span>
+              </div>
+              <p class="text-xs text-slate-400 font-mono mt-0.5">
+                {{ root.organizationName }} &bull; Identifier: <strong class="text-slate-300">{{ root.identifier }}</strong> &bull; {{ root.userCount || 0 }} Members
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 self-end sm:self-center">
+            <button
+              type="button"
+              (click)="openCreateSubTenantModal(root, $event)"
+              class="px-3 py-1.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl transition-all shadow-md flex items-center gap-1 cursor-pointer">
+              <app-icon name="plus" size="13"></app-icon>
+              <span>+ Add Sub-Tenant</span>
+            </button>
+            <button
+              type="button"
+              (click)="viewTenant(root)"
+              class="px-3 py-1.5 text-xs font-bold text-slate-300 hover:text-white bg-[#141418] hover:bg-[#202028] border border-[#27272a] rounded-xl transition-all cursor-pointer">
+              Inspect
+            </button>
+          </div>
+        </div>
+
+        <!-- Downstream Recursive Branches (Level 1+) -->
+        <div class="pl-4 sm:pl-8 border-l-2 border-[#27272a] ml-4 sm:ml-6 space-y-3">
+          <div class="flex items-center justify-between text-xs font-mono text-slate-400 pt-1">
+            <span class="uppercase tracking-wider font-bold text-[10.5px]">Downstream Hierarchy Nodes ({{ root.subTenants.length }})</span>
+            <span class="text-[#00D4FF] text-[11px] font-semibold">Recursive Governance Active</span>
+          </div>
+
+          <!-- Level 1 Children -->
+          <div *ngIf="root.subTenants && root.subTenants.length > 0" class="space-y-3">
+            <div *ngFor="let child of root.subTenants" class="p-3.5 rounded-xl bg-[#141418] border border-[#232328] space-y-3">
+              
+              <div class="flex items-start justify-between gap-2 flex-wrap">
+                <div class="flex items-center gap-2.5 min-w-0">
+                  <div class="w-8 h-8 rounded-lg bg-sky-950/80 border border-sky-800/40 flex items-center justify-center text-sky-300 font-mono font-bold text-xs shrink-0">
+                    {{ child.name.substring(0, 2).toUpperCase() }}
+                  </div>
+                  <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs font-bold text-white truncate">{{ child.name }}</h4>
+                      <span class="px-1.5 py-0.2 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono text-[9px]">
+                        Level 1 Division
+                      </span>
+                    </div>
+                    <span class="text-[10px] text-slate-400 font-mono truncate block">#{{ child.mappedCompId }} &bull; {{ child.identifier }} &bull; {{ child.userCount || 0 }} Members</span>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-1.5 self-end sm:self-center">
+                  <button
+                    type="button"
+                    (click)="openCreateSubTenantModal(child, $event)"
+                    class="px-2.5 py-1 text-[10.5px] font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-lg transition-all cursor-pointer flex items-center gap-1">
+                    <app-icon name="plus" size="11"></app-icon>
+                    <span>+ Sub-Node</span>
+                  </button>
+                  <button type="button" (click)="openEditModal(child, $event)" class="p-1 text-slate-400 hover:text-[#00D4FF] cursor-pointer" title="Edit">
+                    <app-icon name="edit" size="12"></app-icon>
+                  </button>
+                  <button type="button" (click)="viewTenant(child)" class="px-2 py-0.5 text-xs text-[#00D4FF] font-bold hover:underline cursor-pointer">
+                    Manage &rarr;
+                  </button>
+                </div>
+              </div>
+
+              <!-- Level 2+ Grandchildren (Nested Recursive Branch) -->
+              <div *ngIf="child.subTenants && child.subTenants.length > 0" class="pl-4 sm:pl-6 border-l-2 border-dashed border-[#2a2a34] ml-3 sm:ml-4 space-y-2">
+                <span class="text-[10px] font-mono text-slate-500 uppercase font-bold block">Level 2 Sub-Partitions ({{ child.subTenants.length }})</span>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  <div *ngFor="let grandChild of child.subTenants"
+                    class="p-2.5 rounded-lg bg-[#101013] border border-[#27272a] hover:border-[#00D4FF]/40 flex flex-col justify-between space-y-1.5 transition-colors">
+                    <div class="flex items-start justify-between gap-1.5">
+                      <div class="flex items-center gap-2 min-w-0">
+                        <span class="text-[#00D4FF] font-mono text-xs">└──</span>
+                        <div>
+                          <strong class="text-xs text-white block truncate">{{ grandChild.name }}</strong>
+                          <span class="text-[9.5px] text-slate-400 font-mono block">#{{ grandChild.mappedCompId }} &bull; {{ grandChild.identifier }}</span>
+                        </div>
+                      </div>
+                      <span class="px-1.5 py-0.2 rounded font-mono text-[8.5px] bg-emerald-950 text-emerald-300 border border-emerald-800">
+                        Level 2
+                      </span>
+                    </div>
+
+                    <div class="pt-1.5 border-t border-[#232328] flex items-center justify-between text-[10px] font-mono text-slate-400">
+                      <span>{{ grandChild.userCount || 0 }} Members</span>
+                      <div class="flex items-center gap-1.5">
+                        <button type="button" (click)="openCreateSubTenantModal(grandChild, $event)" class="text-sky-300 hover:text-white font-bold cursor-pointer">
+                          + Sub
+                        </button>
+                        <button type="button" (click)="viewTenant(grandChild)" class="text-[#00D4FF] font-bold hover:underline cursor-pointer">
+                          View &rarr;
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div *ngIf="!root.subTenants || root.subTenants.length === 0"
+            class="p-4 rounded-xl bg-[#141418]/60 border border-dashed border-[#27272a] text-center text-xs font-mono text-slate-400">
+            No sub-tenants linked yet. Click <strong class="text-[#00D4FF] cursor-pointer" (click)="openCreateSubTenantModal(root, $event)">+ Add Sub-Tenant</strong> to provision child partitions at any level under {{ root.name }}.
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- VIEW 3: GRID VIEW                                                         -->
+  <!-- ========================================================================= -->
+  <div *ngIf="!isLoading() && viewMode() === 'grid'" class="space-y-4 animate-fadeIn">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+      <div *ngFor="let tenant of paginatedTenants()"
+        class="group relative p-4 rounded-2xl border border-[#232328] bg-[#101013] hover:bg-[#18181c] hover:border-[#00D4FF]/40 transition-all duration-200 shadow-xl flex flex-col justify-between tenant-card">
+        <div>
+          <!-- Header with Code & Status -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div
+              class="w-9 h-9 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold text-xs font-mono shadow-md">
+              {{ tenant.name ? tenant.name.substring(0, 2).toUpperCase() : 'TN' }}
+            </div>
+            <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+              [ngClass]="formatStatus(tenant.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]'">
+              {{ formatStatus(tenant.status) }}
+            </span>
+          </div>
+
+          <!-- Name & Unique Code -->
+          <div class="space-y-1">
+            <div class="flex items-center gap-1.5">
+              <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors line-clamp-1">
+                {{ tenant.name }}
+              </h3>
+            </div>
+            <p class="text-[10px] font-mono text-[#00D4FF] font-semibold">{{ tenant.identifier || 'N/A' }}</p>
+            <p class="text-xs text-slate-400 line-clamp-2 mt-1">
+              {{ tenant.parentTenantName ? 'Child of ' + tenant.parentTenantName : (tenant.organizationName || 'WorkWell Outsourcing') }}
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-2.5 border-t border-[#232328] flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+            <app-icon name="tenants" size="13" class="text-[#00D4FF]"></app-icon>
+            <span class="font-bold text-slate-200">#{{ tenant.mappedCompId || 'N/A' }}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              (click)="openCreateSubTenantModal(tenant, $event)"
+              class="p-1 text-sky-300 hover:text-white hover:bg-sky-900/40 rounded transition-colors cursor-pointer"
+              title="Add Sub-Tenant">
+              <app-icon name="plus" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="openEditModal(tenant, $event)"
+              class="p-1 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-colors cursor-pointer"
+              title="Edit tenant">
+              <app-icon name="edit" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="confirmDelete(tenant, $event)"
+              class="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+              title="Delete tenant">
+              <app-icon name="trash" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="viewTenant(tenant)"
+              class="text-xs font-bold text-[#00D4FF] hover:text-sky-300 flex items-center gap-1 cursor-pointer transition-colors">
+              <span>Details</span>
+              <app-icon name="arrowRight" size="11"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid Pagination Footer -->
+    <div class="p-3 rounded-2xl tenant-glass-bar flex items-center justify-between text-xs text-slate-400 font-mono">
+      <span>Page {{ currentPage() }} of {{ totalPages() || 1 }}</span>
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Previous
+        </button>
+        <span class="px-2 font-bold text-slate-300">{{ currentPage() }} / {{ totalPages() || 1 }}</span>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TENANT DETAILS DRAWER MODAL                                              -->
+  <!-- ========================================================================= -->
+  <div *ngIf="selectedTenant()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+    <div
+      class="w-full max-w-2xl rounded-2xl tenant-modal-card p-6 shadow-2xl space-y-5 border border-[#232328] bg-[#101013] overflow-hidden flex flex-col max-h-[85vh]">
+
+      <!-- Drawer Header -->
+      <div class="flex items-start justify-between border-b border-[#232328] pb-4 shrink-0">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold font-mono text-base shadow-lg">
+            {{ selectedTenant()?.name ? selectedTenant()?.name?.substring(0, 2)?.toUpperCase() : 'TN' }}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white font-display">{{ selectedTenant()?.name }}</h2>
+              <span
+                class="px-2 py-0.5 text-[9px] font-bold uppercase rounded font-mono bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40">
+                {{ formatStatus(selectedTenant()?.status) }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">CompId: <span class="text-[#00D4FF] font-bold">#{{
+                selectedTenant()?.mappedCompId || 'N/A' }}</span> &bull; Identifier: <span class="text-slate-300 font-bold">{{ selectedTenant()?.identifier }}</span></p>
+          </div>
+        </div>
+        <button type="button" (click)="closeTenantDetails()"
+          class="w-8 h-8 rounded-lg bg-[#18181c] text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+          &times;
+        </button>
+      </div>
+
+      <!-- Drawer Tabs -->
+      <div class="flex items-center gap-2 border-b border-[#232328] pb-2 text-xs font-mono">
+        <button type="button" (click)="activeTab = 'overview'"
+          class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          [ngClass]="activeTab === 'overview' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 font-bold' : 'text-slate-400 hover:text-white'">
+          Overview
+        </button>
+        <button type="button" (click)="activeTab = 'hierarchy'"
+          class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          [ngClass]="activeTab === 'hierarchy' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 font-bold' : 'text-slate-400 hover:text-white'">
+          Downstream Hierarchy ({{ getSubTenantsForParent(selectedTenant()!.id).length }})
+        </button>
+        <button type="button" (click)="activeTab = 'members'"
+          class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          [ngClass]="activeTab === 'members' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 font-bold' : 'text-slate-400 hover:text-white'">
+          Members ({{ selectedMembers().length }})
+        </button>
+        <button type="button" (click)="activeTab = 'invitations'"
+          class="px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
+          [ngClass]="activeTab === 'invitations' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 font-bold' : 'text-slate-400 hover:text-white'">
+          Invitations ({{ selectedInvitations().length }})
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="space-y-4 overflow-y-auto pr-1 flex-1">
+
+        <!-- Tab 1: Overview -->
+        <div *ngIf="activeTab === 'overview'" class="space-y-3">
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
+            <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+              <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Tenant ID</span>
+              <span class="text-slate-300 truncate block text-[11px]" [title]="selectedTenant()?.id">{{ selectedTenant()?.id }}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+              <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">WorkWell CompId</span>
+              <span class="text-[#00D4FF] font-bold text-sm">#{{ selectedTenant()?.mappedCompId || 'N/A' }}</span>
+            </div>
+            <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328] col-span-2 sm:col-span-1">
+              <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Parent Organization</span>
+              <span class="text-slate-300 text-[11px] truncate block">{{ selectedTenant()?.organizationName || 'WorkWell Outsourcing' }}</span>
+            </div>
+          </div>
+
+          <div *ngIf="selectedTenant()?.parentTenantName" class="p-3.5 rounded-xl bg-[#18181c] border border-sky-500/30 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-sky-400 font-mono block">Parent Tenant Node</span>
+              <p class="text-xs text-white font-bold">{{ selectedTenant()?.parentTenantName }}</p>
+            </div>
+            <span class="px-2 py-0.5 rounded bg-sky-950 text-sky-300 border border-sky-800 font-mono text-[10px]">
+              Child Partition
+            </span>
+          </div>
+
+          <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">Tenant Partition Scope</span>
+            <p class="text-xs text-slate-300 leading-relaxed">{{ selectedTenant()?.['description'] || 'Isolated customer partition operating within the WorkWell Finance ecosystem.' }}</p>
+          </div>
+        </div>
+
+        <!-- Tab 2: Downstream Hierarchy -->
+        <div *ngIf="activeTab === 'hierarchy'" class="space-y-3">
+          <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-3">
+            <div class="flex items-center justify-between">
+              <div>
+                <h4 class="text-xs font-bold text-white">Downstream Sub-Tenants</h4>
+                <p class="text-[10px] text-slate-400 font-mono">Partitions nested under {{ selectedTenant()?.name }}</p>
+              </div>
+              <button
+                type="button"
+                (click)="openCreateSubTenantModal(selectedTenant()!); closeTenantDetails()"
+                class="px-2.5 py-1 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-lg transition-all cursor-pointer flex items-center gap-1 shadow-md">
+                <app-icon name="plus" size="12"></app-icon>
+                <span>+ Add Sub-Tenant</span>
+              </button>
+            </div>
+
+            <!-- List of Sub-Tenants -->
+            <div *ngIf="getSubTenantsForParent(selectedTenant()!.id).length > 0" class="space-y-2 text-xs">
+              <div *ngFor="let child of getSubTenantsForParent(selectedTenant()!.id)"
+                class="p-2.5 rounded-xl bg-[#101013] border border-[#27272a] hover:border-[#00D4FF]/40 flex items-center justify-between transition-colors">
+                <div class="flex items-center gap-2.5">
+                  <div class="w-7 h-7 rounded-lg bg-sky-950/80 border border-sky-800/50 flex items-center justify-center text-sky-300 font-mono font-bold text-xs">
+                    {{ child.name.substring(0, 2).toUpperCase() }}
+                  </div>
+                  <div>
+                    <strong class="text-white block">{{ child.name }}</strong>
+                    <span class="text-[10px] text-slate-400 font-mono">#{{ child.mappedCompId }} &bull; {{ child.userCount || 0 }} Members</span>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-[10px] font-mono text-[#00D4FF] bg-[#00D4FF]/10 px-2 py-0.5 rounded border border-[#00D4FF]/30">
+                    {{ child.identifier }}
+                  </span>
+                  <button type="button" (click)="viewTenant(child)" class="text-xs font-bold text-slate-300 hover:text-white cursor-pointer">
+                    Inspect &rarr;
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div *ngIf="getSubTenantsForParent(selectedTenant()!.id).length === 0"
+              class="p-6 rounded-xl bg-[#101013] border border-dashed border-[#27272a] text-center space-y-1">
+              <p class="text-xs font-bold text-slate-300">No Child Partitions Linked</p>
+              <p class="text-[11px] text-slate-500">You can add child departments or sub-tenants nested under this parent tenant node.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Members -->
+        <div *ngIf="activeTab === 'members'" class="space-y-2">
+          <div *ngFor="let m of selectedMembers()" class="p-3 rounded-xl bg-[#18181c] border border-[#232328] flex items-center justify-between">
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-lg bg-slate-800 text-slate-200 font-mono font-bold text-xs flex items-center justify-center">
+                {{ m.fullName ? m.fullName.substring(0, 2).toUpperCase() : 'US' }}
+              </div>
+              <div>
+                <h4 class="text-xs font-bold text-white">{{ m.fullName }}</h4>
+                <p class="text-[10px] text-slate-400 font-mono">{{ m.email }}</p>
+              </div>
+            </div>
+            <span class="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-sky-500/10 text-[#00D4FF] border border-[#00D4FF]/30">
+              {{ m.role || 'Member' }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Tab 4: Invitations -->
+        <div *ngIf="activeTab === 'invitations'" class="space-y-2">
+          <div *ngIf="selectedInvitations().length === 0" class="p-6 text-center text-slate-400 font-mono text-xs">
+            No active pending invitations for this tenant.
+          </div>
+          <div *ngFor="let inv of selectedInvitations()" class="p-3 rounded-xl bg-[#18181c] border border-[#232328] flex items-center justify-between">
+            <div>
+              <span class="text-xs font-bold text-white">{{ inv.email }}</span>
+              <p class="text-[10px] text-slate-400 font-mono">Invited as: {{ inv.role }}</p>
+            </div>
+            <span class="text-[9px] font-mono text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/30">PENDING</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Modal Footer -->
+      <div class="pt-4 mt-2 border-t border-[#232328] flex items-center justify-between shrink-0">
+        <button type="button" (click)="confirmDelete(selectedTenant()!, $event); closeTenantDetails()"
+          class="px-3.5 py-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-800/60 rounded-xl cursor-pointer transition-colors shadow-md flex items-center gap-1.5">
+          <app-icon name="trash" size="13"></app-icon>
+          <span>Delete Tenant</span>
+        </button>
+        <button type="button" (click)="closeTenantDetails()"
+          class="px-5 py-2 text-xs font-bold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl cursor-pointer transition-colors shadow-md">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- CREATE TENANT MODAL                                                       -->
+  <!-- ========================================================================= -->
+  <div *ngIf="isCreateModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl tenant-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="tenants" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Provision Tenant Partition</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">Define multi-tenant isolation boundary, hierarchy, and mapping</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeCreateModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="createTenantForm" (ngSubmit)="onCreateSubmit()" class="space-y-4" novalidate>
+
+        <!-- Tenant Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Tenant Name <span class="text-[#00D4FF] font-bold">*</span></span>
+            <span class="text-[10px] text-slate-400 font-mono">Customer Entity / Partition</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="tenants" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. Eutopia Search"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- Identifier & Parent Organization Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Identifier</label>
+            <input type="text" formControlName="identifier" placeholder="EUTOPIA_SEARCH"
+              class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white uppercase placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-mono transition-all" />
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Parent Organization</label>
+            <app-custom-select
+              formControlName="organizationId"
+              [options]="orgSelectOptions()"
+              placeholder="Select Organization">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Parent Tenant Hierarchy Selection -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Parent Tenant (Hierarchy Link)</span>
+            <span class="text-[10px] text-sky-400 font-mono">Optional Sub-Partition</span>
+          </label>
+          <app-custom-select
+            formControlName="parentTenantId"
+            [options]="parentTenantOptions()"
+            placeholder="None (Root Level Tenant)">
+          </app-custom-select>
+          <p class="text-[10.5px] text-slate-500 font-mono pt-0.5">
+            If selected, this tenant will nest as a child partition inheriting parent boundary policies.
+          </p>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Description</span>
+            <span class="text-[10px] text-slate-400">Partition Scope</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-3 text-slate-400 pointer-events-none z-10">
+              <app-icon name="fileText" size="15"></app-icon>
+            </div>
+            <textarea formControlName="description" rows="2"
+              placeholder="Executive search division, multi-currency invoicing, and payroll..."
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all font-sans"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeCreateModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="createTenantForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="plusIcon" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Provisioning...' : 'Provision Tenant' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- EDIT TENANT MODAL                                                         -->
+  <!-- ========================================================================= -->
+  <div *ngIf="isEditModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl tenant-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="edit" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Edit Tenant Partition</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">{{ tenantToEdit()?.identifier }}</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeEditModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="editTenantForm" (ngSubmit)="onEditSubmit()" class="space-y-4" novalidate>
+
+        <!-- Tenant Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Tenant Name <span class="text-[#00D4FF] font-bold">*</span></span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="tenants" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. Eutopia Search"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- CompId & Status Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">WorkWell CompId</label>
+            <input type="number" formControlName="mappedCompId"
+              class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white font-mono focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all" />
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Status</label>
+            <app-custom-select
+              formControlName="status"
+              [options]="modalStatusOptions"
+              placeholder="Select Status">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Parent Organization & Parent Tenant Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Parent Organization</label>
+            <app-custom-select
+              formControlName="organizationId"
+              [options]="orgSelectOptions()"
+              placeholder="Select Organization">
+            </app-custom-select>
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Parent Tenant</label>
+            <app-custom-select
+              formControlName="parentTenantId"
+              [options]="parentTenantOptions()"
+              placeholder="None (Root Level)">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeEditModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="editTenantForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="check" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Saving...' : 'Save Changes' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- DELETE TENANT CONFIRMATION MODAL                                          -->
+  <!-- ========================================================================= -->
+  <div *ngIf="tenantToDelete()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-900/50 bg-[#101013] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-rose-400">
+        <div class="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-800 flex items-center justify-center">
+          <app-icon name="trash" size="18"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Delete Tenant Partition</h2>
+          <p class="text-xs text-rose-400">Permanent Database Deletion</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Are you sure you want to permanently delete <strong class="text-white">{{ tenantToDelete()?.name }}</strong>? This will cascade and delete associated local company bindings and member assignments.
+      </p>
+
+      <div class="pt-3 flex items-center justify-end gap-2 border-t border-[#232328]">
+        <button type="button" (click)="cancelDelete()"
+          class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+        <button type="button" (click)="executeDelete()" [disabled]="isDeleting()"
+          class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl cursor-pointer">
+          {{ isDeleting() ? 'Deleting...' : 'Delete Tenant' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

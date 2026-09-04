@@ -1,0 +1,464 @@
+<div class="w-full space-y-2 sm:space-y-2.5 animate-fadeIn pb-0">
+
+  <!-- ROW 1: 4 Executive KPI Metric Cards -->
+  <app-stats-cards></app-stats-cards>
+
+  <!-- ROW 2: Primary Visual Analytics Grid (7 Cols Stacked Bar + 5 Cols Tenant Capacity) -->
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-2.5 sm:gap-3 items-stretch">
+
+    <!-- CARD 1 (7 Cols): Multi-Tenant Fleet & Organization Provisioning Matrix -->
+    <div class="lg:col-span-7 rounded-2xl bento-card p-3.5 sm:p-4 flex flex-col justify-between shadow-lg space-y-2">
+      <div>
+        <!-- Card Header with Title and Brand Legend -->
+        <div class="flex flex-wrap items-center justify-between border-b border-[#232328] pb-2 mb-1.5 gap-2">
+          <div class="flex items-center gap-2.5">
+            <div
+              class="w-7 h-7 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-sm shrink-0">
+              <app-icon name="building" size="15"></app-icon>
+            </div>
+            <div>
+              <h2 class="text-xs sm:text-sm font-bold text-white font-sans tracking-tight">
+                Platform Fleet &amp; Velocity
+              </h2>
+              <p class="text-[10.5px] text-slate-400 font-normal">
+                Monthly provisioning distribution of Orgs, Tenants &amp; Users
+              </p>
+            </div>
+          </div>
+
+          <!-- Brand Aligned Color Legend Badges -->
+          <div class="flex items-center gap-2.5 text-[11px] font-sans text-slate-300">
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-[#3b82f6]"></span>
+              <span class="text-blue-300 font-medium">Orgs</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-[#00D4FF]"></span>
+              <span class="text-sky-300 font-medium">Tenants</span>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-white border border-slate-400"></span>
+              <span class="text-slate-200 font-medium">Users</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- STACKED PILL BAR CHART CONTAINER -->
+        <div class="p-3 pt-8 sm:pt-10 rounded-xl bg-[#141417] border border-[#232328] relative overflow-visible select-none shadow-inner mt-1">
+
+          <!-- Background Dashed Horizontal Guide Lines -->
+          <div class="absolute inset-x-4 inset-y-4 flex flex-col justify-between pointer-events-none z-0">
+            <div class="w-full border-b border-dashed border-[#27272a]/50"></div>
+            <div class="w-full border-b border-dashed border-[#27272a]/50"></div>
+            <div class="w-full border-b border-dashed border-[#27272a]/50"></div>
+            <div class="w-full border-b border-[#27272a]/80"></div>
+          </div>
+
+          <!-- 12 Stacked Pill Month Bars Grid -->
+          <div class="relative z-10 grid grid-cols-12 gap-1 sm:gap-2 items-end pt-1 pb-1">
+            <div *ngFor="let m of monthlyGrowthList()" class="relative flex flex-col items-center group cursor-pointer"
+              (mouseenter)="hoveredMonth.set(m)"
+              (mouseleave)="hoveredMonth.set(null)">
+
+              <!-- FLOATING SPEECH-BUBBLE POPOVER TOOLTIP ON HOVER -->
+              <div *ngIf="hoveredMonth()?.month === m.month"
+                class="absolute -top-20 left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-150 animate-fadeIn min-w-[150px] p-2.5 rounded-xl bg-[#121216] border border-[#00D4FF]/60 shadow-2xl">
+
+                <div class="flex items-center justify-between gap-1.5 border-b border-[#27272a] pb-1 mb-1">
+                  <span class="text-xs font-bold text-white">{{ m.fullMonth }}</span>
+                  <span class="text-[9px] font-mono font-bold text-[#00D4FF] bg-[#00D4FF]/15 px-1 py-0.5 rounded">{{ m.growthRate }}</span>
+                </div>
+
+                <div class="space-y-0.5 text-[11px]">
+                  <div class="flex items-center justify-between">
+                    <span class="text-blue-400 font-medium flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#3b82f6]"></span> Orgs
+                    </span>
+                    <span class="font-bold text-white font-mono">+{{ m.orgsCreated }}</span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-[#00D4FF] font-medium flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#00D4FF]"></span> Tenants
+                    </span>
+                    <span class="font-bold text-white font-mono">+{{ m.tenantsProvisioned }}</span>
+                  </div>
+
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-200 font-medium flex items-center gap-1">
+                      <span class="w-1.5 h-1.5 rounded-full bg-white"></span> Users
+                    </span>
+                    <span class="font-bold text-white font-mono">+{{ m.usersAdded }}</span>
+                  </div>
+                </div>
+
+                <!-- Tooltip Tail -->
+                <div class="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-[#121216]"></div>
+              </div>
+
+              <!-- ROUNDED PILL TRACK -->
+              <div
+                class="w-full max-w-[28px] h-28 sm:h-32 rounded-xl overflow-hidden flex flex-col justify-end p-0.5 transition-all duration-200"
+                [ngClass]="[
+                  m.isFuture ? 'bg-[#121215] border border-dashed border-[#27272a]/60 opacity-40 group-hover:opacity-75' : 'bg-[#1c1c21] border border-[#27272a] group-hover:border-[#00D4FF]/60 group-hover:scale-105 group-hover:shadow-[0_0_15px_rgba(0,212,255,0.25)]',
+                  activeDisplayMonth().month === m.month ? 'ring-2 ring-[#00D4FF]/60 border-[#00D4FF]/80 !opacity-100 shadow-[0_0_15px_rgba(0,212,255,0.3)]' : ''
+                ]">
+
+                <!-- Segment 3: Users -->
+                <div *ngIf="!m.isFuture && m.userPct > 0" [style.height.%]="m.userPct"
+                  class="w-full rounded-lg bg-gradient-to-t from-slate-300 to-white transition-all duration-500 shadow-sm">
+                </div>
+
+                <div *ngIf="!m.isFuture && m.userPct > 0 && m.tenantPct > 0" class="h-0.5 shrink-0"></div>
+
+                <!-- Segment 2: Tenants -->
+                <div *ngIf="!m.isFuture && m.tenantPct > 0" [style.height.%]="m.tenantPct"
+                  class="w-full rounded-lg bg-gradient-to-t from-[#0284c7] to-[#00D4FF] transition-all duration-500 shadow-sm">
+                </div>
+
+                <div *ngIf="!m.isFuture && m.tenantPct > 0 && m.orgPct > 0" class="h-0.5 shrink-0"></div>
+
+                <!-- Segment 1: Organizations -->
+                <div *ngIf="!m.isFuture && m.orgPct > 0" [style.height.%]="m.orgPct"
+                  class="w-full rounded-lg bg-gradient-to-t from-[#1d4ed8] to-[#3b82f6] transition-all duration-500 shadow-sm">
+                </div>
+
+              </div>
+
+              <!-- Month Label -->
+              <span
+                class="text-[10px] sm:text-[11px] font-sans font-medium mt-1.5 transition-colors select-none"
+                [ngClass]="[
+                  m.isFuture ? 'text-slate-600' : 'text-slate-400 group-hover:text-[#00D4FF]',
+                  activeDisplayMonth().month === m.month ? '!text-[#00D4FF] !font-bold' : ''
+                ]">
+                {{ m.month }}
+              </span>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Inspector Banner -->
+      <div class="pt-1.5 border-t border-[#232328] flex items-center justify-between text-[11px] font-sans text-slate-400">
+        <span>Selected: <strong class="text-[#00D4FF] font-semibold">{{ activeDisplayMonth().fullMonth }}</strong></span>
+        <span class="text-slate-200 font-medium truncate flex items-center gap-1.5">
+          <strong class="text-blue-400 font-semibold">+{{ activeDisplayMonth().orgsCreated }} Orgs</strong>
+          <span class="text-slate-600">&bull;</span>
+          <strong class="text-[#00D4FF] font-semibold">+{{ activeDisplayMonth().tenantsProvisioned }} Tenants</strong>
+          <span class="text-slate-600">&bull;</span>
+          <strong class="text-slate-200 font-semibold">+{{ activeDisplayMonth().usersAdded }} Users</strong>
+        </span>
+      </div>
+    </div>
+
+
+    <!-- CARD 2 (5 Cols): Tenant Resource Goals & Allocation (Matching Reference Design with Live Data + User Hover) -->
+    <div class="lg:col-span-5 rounded-2xl bento-card p-3.5 sm:p-4 flex flex-col justify-between shadow-lg space-y-3">
+      <div>
+        <!-- Card Header: Title on Left + Circular Arrow Button on Right (Matching Reference Image) -->
+        <div class="flex items-center justify-between border-b border-[#232328] pb-2.5 mb-3">
+          <div class="flex items-center gap-2">
+            <app-icon name="tenants" size="16" class="text-[#00D4FF]"></app-icon>
+            <h2 class="text-xs sm:text-sm font-extrabold text-white font-display tracking-tight">Tenant Allocation &amp; Goals</h2>
+          </div>
+          <a routerLink="/tenants"
+            title="View All Tenants"
+            class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#18181c] border border-[#27272a] hover:border-[#00D4FF]/60 hover:bg-[#00D4FF]/10 text-slate-300 hover:text-[#00D4FF] flex items-center justify-center transition-all cursor-pointer shadow-sm">
+            <span class="text-xs sm:text-sm font-bold">&#8599;</span>
+          </a>
+        </div>
+
+        <!-- Rows: Item Name + Value on Top Line, Capsule Progress Bar on Bottom Line (Matching Reference Image) -->
+        <div class="space-y-3.5 py-0.5">
+          <div *ngFor="let item of capacityGoalStats()"
+            class="space-y-1.5 relative group cursor-pointer"
+            (mouseenter)="hoveredGoalTenantId.set(item.id)"
+            (mouseleave)="hoveredGoalTenantId.set(null)">
+            
+            <!-- Top Line: Item Name on Left, Formatted Value on Right -->
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2 min-w-0">
+                <span class="text-xs sm:text-sm font-bold transition-colors truncate"
+                  [ngClass]="hoveredGoalTenantId() === item.id ? 'text-[#00D4FF]' : 'text-white'">
+                  {{ item.name }}
+                </span>
+                <span class="text-[9.5px] font-mono text-slate-500">#{{ item.compId }}</span>
+              </div>
+              <span class="text-xs font-bold font-mono tracking-tight shrink-0" [ngClass]="item.style.text">
+                {{ item.formattedUsers }}
+              </span>
+            </div>
+
+            <!-- Bottom Line: Full-Width Capsule Progress Bar with Centered Percentage Pill -->
+            <div class="h-4 sm:h-5 rounded-full bg-[#18181c] border border-[#27272a] p-0.5 relative flex items-center overflow-hidden transition-colors"
+              [ngClass]="hoveredGoalTenantId() === item.id ? 'border-[#38bdf8]/60' : ''">
+              <div
+                class="h-full rounded-full transition-all duration-500 flex items-center justify-center"
+                [ngClass]="item.style.fill"
+                [style.width.%]="item.pct">
+                <!-- Percentage Inside Pill -->
+                <span *ngIf="item.pct >= 14" class="text-[10px] font-mono font-bold text-white px-1.5 leading-none select-none">
+                  {{ item.pct }}%
+                </span>
+              </div>
+              <!-- Percentage Beside Pill if too narrow -->
+              <span *ngIf="item.pct < 14" class="text-[10px] font-mono font-bold text-slate-400 pl-1.5 leading-none select-none">
+                {{ item.pct }}%
+              </span>
+            </div>
+
+            <!-- CLEAN USER NAMES POPOVER ON HOVER (NO HEAVY SHADOWS) -->
+            <div *ngIf="hoveredGoalTenantId() === item.id"
+              class="absolute -top-11 left-0 right-0 z-30 pointer-events-none transition-all duration-150">
+              <div class="bg-[#18181c] border border-[#2e2e34] rounded-lg py-1 px-3 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0">
+                  <span class="w-1.5 h-1.5 rounded-full bg-[#00D4FF]"></span>
+                  <div class="flex items-center gap-1.5 truncate">
+                    <span class="text-[10.5px] text-slate-400 font-mono">Members:</span>
+                    <span class="text-xs font-semibold text-white font-mono truncate">
+                      {{ item.userNamesText }}
+                    </span>
+                  </div>
+                </div>
+                <span class="text-[10px] font-mono font-semibold px-1.5 py-0.5 rounded bg-[#232328] text-slate-300 border border-[#2e2e34] shrink-0">
+                  {{ item.users }} Users
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Card Footer (Dynamic on Hover) -->
+      <div class="pt-2 border-t border-[#232328] flex items-center justify-between text-[11px] font-mono text-slate-400 select-none">
+        <span *ngIf="activeHoveredGoalTenant() as t; else defaultFooter">
+          Selected: <strong class="text-[#00D4FF] font-bold">{{ t.name }}</strong>
+        </span>
+        <ng-template #defaultFooter>
+          <span>Allocation Strategy: <strong class="text-[#00D4FF] font-semibold">100% Multi-Tenant Bound</strong></span>
+        </ng-template>
+
+        <span *ngIf="activeHoveredGoalTenant() as t; else defaultSync" class="text-slate-200 font-medium truncate flex items-center gap-1.5">
+          <strong [ngClass]="t.style.text" class="font-bold">{{ t.userNamesText }}</strong>
+        </span>
+        <ng-template #defaultSync>
+          <span class="text-slate-500 font-mono">Hover to view members</span>
+        </ng-template>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ROW 3: Infrastructure & Operations Grid (3 Cards: Products Ecosystem, Security Event Stream, Tenant Allocation Donut) -->
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3 items-stretch">
+
+    <!-- CARD 1: Products & Gateways Ecosystem (Executive SaaS Polish) -->
+    <div class="rounded-2xl bento-card p-3.5 sm:p-4 flex flex-col justify-between shadow-lg space-y-2.5">
+      <div>
+        <!-- Card Header -->
+        <div class="flex items-center justify-between border-b border-[#232328] pb-2 mb-2">
+          <div class="flex items-center gap-2">
+            <app-icon name="layers" size="16" class="text-[#00D4FF]"></app-icon>
+            <h2 class="text-xs sm:text-sm font-extrabold text-white font-display tracking-tight">Products &amp; Gateways</h2>
+          </div>
+          <a routerLink="/products"
+            class="text-[11px] font-bold text-[#00D4FF] hover:text-sky-300 font-mono tracking-wide">
+            Catalog &rarr;
+          </a>
+        </div>
+
+        <!-- 4 Products Micro Cards (Bound to live API) -->
+        <div class="grid grid-cols-2 gap-2 mb-2">
+          <div *ngFor="let p of products()"
+            class="p-2.5 rounded-xl bg-[#141418] border border-[#232328] hover:border-[#00D4FF]/40 transition-all shadow-sm flex flex-col justify-between space-y-1.5 group cursor-pointer">
+            <div class="flex items-center justify-between gap-1.5">
+              <span class="text-white font-bold text-xs truncate group-hover:text-[#00D4FF] transition-colors">{{ p.name }}</span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#00D4FF] shrink-0"></span>
+            </div>
+            <div class="flex items-center justify-between text-[10px] font-mono text-slate-400">
+              <span class="text-slate-500">{{ p.version }}</span>
+              <span class="text-[#00D4FF] font-bold bg-[#00D4FF]/10 border border-[#00D4FF]/30 px-1.5 py-0.2 rounded">{{ p.tenants }} Partitions</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Live Gateway Status Pulse Card -->
+        <div class="p-2 px-3 rounded-xl bg-[#141418] border border-[#232328] hover:border-[#00D4FF]/40 transition-all shadow-sm flex items-center justify-between font-mono text-xs">
+          <div class="flex items-center gap-2 truncate">
+            <span class="relative flex h-2 w-2 shrink-0">
+              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D4FF] opacity-75"></span>
+              <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00D4FF]"></span>
+            </span>
+            <span class="text-slate-200 text-xs font-semibold truncate">OIDC Auth 2.0 Bridge</span>
+          </div>
+          <div class="flex items-center gap-2 shrink-0 text-[10.5px]">
+            <span class="text-slate-400">11ms</span>
+            <span class="text-[#00D4FF] font-bold bg-[#00D4FF]/10 border border-[#00D4FF]/30 px-1.5 py-0.5 rounded">100% SLA</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-[#232328] flex items-center justify-between text-[11px] font-mono text-slate-300">
+        <span>Global Gateway SLA:</span>
+        <span class="text-[#00D4FF] font-bold">99.99% Uptime</span>
+      </div>
+    </div>
+
+    <!-- CARD 2: Connected Applications Ecosystem (Executive SaaS Polish) -->
+    <div class="rounded-2xl bento-card p-3.5 sm:p-4 flex flex-col justify-between shadow-lg space-y-2.5">
+      <div>
+        <!-- Card Header -->
+        <div class="flex items-center justify-between border-b border-[#232328] pb-2 mb-2">
+          <div class="flex items-center gap-2">
+            <app-icon name="grid" size="16" class="text-[#00D4FF]"></app-icon>
+            <h2 class="text-xs sm:text-sm font-extrabold text-white font-display tracking-tight">Connected Applications</h2>
+          </div>
+          <a routerLink="/applications"
+            class="text-[11px] font-bold text-[#00D4FF] hover:text-sky-300 font-mono tracking-wide">
+            Applications &rarr;
+          </a>
+        </div>
+
+        <!-- Applications List Items (Bound to live API) -->
+        <div class="space-y-2">
+          <div *ngFor="let app of liveApplications().slice(0, 3)"
+            class="p-2.5 px-3 rounded-xl bg-[#141418] border border-[#232328] flex items-center justify-between hover:border-[#00D4FF]/40 transition-all shadow-sm group">
+            <div class="flex items-center gap-2.5 min-w-0">
+              <div
+                class="w-7 h-7 rounded-lg bg-[#101013] border border-[#232328] text-xs font-bold text-[#00D4FF] flex items-center justify-center font-mono shrink-0 shadow-inner group-hover:border-[#00D4FF]/50 transition-colors">
+                <app-icon name="layers" size="13"></app-icon>
+              </div>
+              <div class="min-w-0">
+                <p class="font-bold text-white truncate text-xs leading-snug group-hover:text-[#00D4FF] transition-colors">{{ app.name }}</p>
+                <span class="text-[10px] text-slate-400 font-mono truncate block">{{ app.clientId || app.key }}</span>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0 font-mono text-[10px]">
+              <span class="px-2 py-0.5 rounded font-bold uppercase"
+                [ngClass]="app.status === 'ACTIVE' || !app.status ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-[#18181c] text-slate-400 border border-[#27272a]'">
+                {{ app.status || 'ACTIVE' }}
+              </span>
+              <span class="w-1.5 h-1.5 rounded-full bg-[#00D4FF]"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-[#232328] flex items-center justify-between text-[11px] font-mono text-slate-300">
+        <span>Application Identity Scope:</span>
+        <span class="text-[#00D4FF] font-bold">100% Bound &amp; Isolated</span>
+      </div>
+    </div>
+
+    <!-- CARD 3 (Right Bottom): Tenant Allocation & Density (Donut Chart Matching Reference Image) -->
+    <div class="rounded-2xl bento-card p-3.5 sm:p-4 flex flex-col justify-between shadow-lg space-y-2">
+      <div>
+        <!-- Card Header with Navigation Arrow -->
+        <div class="flex items-center justify-between border-b border-[#232328] pb-2 mb-2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-7 h-7 rounded-lg bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-sm">
+              <app-icon name="users" size="15"></app-icon>
+            </div>
+            <div>
+              <h2 class="text-xs sm:text-sm font-bold text-white font-display tracking-tight leading-none">Tenant Allocation &amp; Density</h2>
+              <p class="text-[10.5px] text-slate-400 font-mono mt-0.5">Partition user density &amp; core compute load</p>
+            </div>
+          </div>
+          <a routerLink="/tenants"
+            title="View All Tenants"
+            class="w-7 h-7 rounded-lg bg-[#18181c] border border-[#27272a] hover:border-[#00D4FF]/60 hover:bg-[#00D4FF]/15 text-slate-400 hover:text-[#00D4FF] flex items-center justify-center transition-all cursor-pointer shadow-sm">
+            <span class="text-xs font-bold">&#8599;</span>
+          </a>
+        </div>
+
+        <!-- Donut Chart with Radial Callout Pointer Lines (Matching User Reference Image) -->
+        <div class="flex items-center justify-center py-1 relative min-h-[160px]">
+          <svg viewBox="0 0 380 210" class="w-full max-w-[370px] h-auto overflow-visible select-none">
+            
+            <!-- Slice Segments -->
+            <g>
+              <path
+                *ngFor="let slice of radialCalloutSlices(); let i = index"
+                [attr.d]="slice.pathData"
+                [attr.fill]="slice.color"
+                stroke="#101013"
+                stroke-width="2.5"
+                stroke-linejoin="round"
+                class="cursor-pointer transition-all duration-200"
+                [style.opacity]="hoveredSegmentIndex() === null || hoveredSegmentIndex() === i ? '1' : '0.4'"
+                (mouseenter)="setHoveredSegment(i)"
+                (mouseleave)="setHoveredSegment(null)"
+              />
+            </g>
+
+            <!-- Leader Pointer Lines -->
+            <g>
+              <polyline
+                *ngFor="let slice of radialCalloutSlices(); let i = index"
+                [attr.points]="slice.polylinePoints"
+                fill="none"
+                [attr.stroke]="hoveredSegmentIndex() === i ? slice.color : '#64748b'"
+                [attr.stroke-width]="hoveredSegmentIndex() === i ? 1.5 : 1"
+                class="transition-colors duration-200"
+              />
+            </g>
+
+            <!-- Pointer Line Labels: e.g. "Eutopia: 50%" -->
+            <g>
+              <text
+                *ngFor="let slice of radialCalloutSlices(); let i = index"
+                [attr.x]="slice.textX"
+                [attr.y]="slice.textY"
+                [attr.text-anchor]="slice.textAnchor"
+                class="text-[11px] font-mono cursor-pointer transition-all duration-200 font-bold"
+                (mouseenter)="setHoveredSegment(i)"
+                (mouseleave)="setHoveredSegment(null)"
+              >
+                <tspan [attr.fill]="hoveredSegmentIndex() === i ? slice.color : '#f1f5f9'" font-weight="700">{{ slice.name }}</tspan><tspan fill="#64748b" font-weight="400">:</tspan><tspan [attr.fill]="hoveredSegmentIndex() === i ? '#38bdf8' : '#cbd5e1'" font-weight="700">{{ slice.pct }}%</tspan>
+              </text>
+            </g>
+
+            <!-- Center Clean Round Disc (Matching Reference Image) -->
+            <g pointer-events="none">
+              <!-- Disc Background -->
+              <circle
+                cx="190"
+                cy="105"
+                r="39"
+                fill="#ffffff"
+                stroke="#e2e8f0"
+                stroke-width="1.5"
+              />
+
+              <!-- Center Text Content -->
+              <text x="190" y="93" text-anchor="middle" font-size="9" fill="#64748b" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600">
+                Total
+              </text>
+              <text x="190" y="113" text-anchor="middle" font-size="18" fill="#0f172a" font-family="'Outfit', sans-serif" font-weight="900" letter-spacing="-0.5">
+                {{ totalCapacityUsers() }}
+              </text>
+              <text x="190" y="125" text-anchor="middle" font-size="8.5" fill="#64748b" font-family="'Plus Jakarta Sans', sans-serif" font-weight="600">
+                Users
+              </text>
+            </g>
+
+          </svg>
+        </div>
+      </div>
+
+      <!-- Card Footer -->
+      <div class="pt-2 border-t border-[#232328] flex items-center justify-between text-[11px] font-mono text-slate-400">
+        <span>Central Memory Isolation:</span>
+        <span class="text-[#00D4FF] font-semibold">Zero Memory Bleed Guaranteed</span>
+      </div>
+    </div>
+
+  </div>
+
+</div>

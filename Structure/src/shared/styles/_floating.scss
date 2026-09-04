@@ -1,0 +1,17 @@
+/* Container */
+.floating-group {
+  @apply relative mt-6;
+}
+
+/* Input */
+.floating-input-base {
+  @apply w-full bg-[#1b1f27] text-white px-4 py-3 rounded-lg 
+         border border-gray-700 focus:border-white focus:outline-none;
+}
+
+/* Label */
+.floating-label-base {
+  @apply absolute left-4 px-1 bg-[#1b1f27] text-gray-400 
+         transition-all duration-200 ease-in-out pointer-events-none 
+         top-3 text-base;
+}

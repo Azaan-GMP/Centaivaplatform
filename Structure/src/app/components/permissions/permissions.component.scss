@@ -1,0 +1,58 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.perm-kpi-card {
+  background: #101013;
+  border: 1px solid #232328;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+.perm-table-wrapper {
+  background: #101013;
+  border: 1px solid #232328;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+}
+
+.perm-table-row {
+  border-bottom: 1px solid #232328;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #18181c;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.perm-glass-bar {
+  background: #101013;
+  border: 1px solid #232328;
+}
+
+.perm-modal-card {
+  background: #101013;
+  border: 1px solid #232328;
+  box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(0, 212, 255, 0.08);
+}
+
+/* Light Theme Overrides */
+:host-context(html.light),
+:host-context(html.theme-light),
+:host-context(html[data-theme='light']) {
+  .perm-kpi-card,
+  .perm-table-wrapper,
+  .perm-glass-bar,
+  .perm-modal-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .perm-table-row:hover {
+    background: #f1f5f9 !important;
+  }
+}

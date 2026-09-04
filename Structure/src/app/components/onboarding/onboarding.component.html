@@ -1,0 +1,167 @@
+<div class="space-y-6 max-w-4xl mx-auto animate-fadeIn">
+  <div>
+    <h1 class="text-xl font-bold text-white font-display">Organization & Tenant Onboarding Wizard</h1>
+    <p class="text-xs text-slate-400 mt-1">Multi-step provisioning pipeline for new customer organizations, tenant partitions, and administrator credentials</p>
+  </div>
+
+  <!-- Wizard Steps Indicator -->
+  <div class="grid grid-cols-3 gap-3">
+    <div
+      class="p-3.5 rounded-2xl border transition-all"
+      [ngClass]="currentStep() === 1 ? 'border-[#00D4FF] bg-[#00D4FF]/10 text-[#00D4FF]' : 'border-[#232328] bg-[#101013] text-slate-400'"
+    >
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono" [ngClass]="currentStep() === 1 ? 'bg-[#00D4FF] text-slate-950' : 'bg-[#18181c] text-slate-300'">1</span>
+        <span class="text-xs font-bold">1. Organization</span>
+      </div>
+    </div>
+
+    <div
+      class="p-3.5 rounded-2xl border transition-all"
+      [ngClass]="currentStep() === 2 ? 'border-[#00D4FF] bg-[#00D4FF]/10 text-[#00D4FF]' : 'border-[#232328] bg-[#101013] text-slate-400'"
+    >
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono" [ngClass]="currentStep() === 2 ? 'bg-[#00D4FF] text-slate-950' : 'bg-[#18181c] text-slate-300'">2</span>
+        <span class="text-xs font-bold">2. Tenant & App</span>
+      </div>
+    </div>
+
+    <div
+      class="p-3.5 rounded-2xl border transition-all"
+      [ngClass]="currentStep() === 3 ? 'border-[#00D4FF] bg-[#00D4FF]/10 text-[#00D4FF]' : 'border-[#232328] bg-[#101013] text-slate-400'"
+    >
+      <div class="flex items-center gap-2">
+        <span class="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold font-mono" [ngClass]="currentStep() === 3 ? 'bg-[#00D4FF] text-slate-950' : 'bg-[#18181c] text-slate-300'">3</span>
+        <span class="text-xs font-bold">3. Admin & Launch</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Wizard Form Box -->
+  <div class="rounded-2xl border border-[#232328] bg-[#101013] p-7 shadow-2xl shadow-black/50" *ngIf="!isSuccess()">
+    <form [formGroup]="onboardingForm" class="space-y-5">
+      
+      <!-- STEP 1: Organization Details -->
+      <div *ngIf="currentStep() === 1" class="space-y-4 animate-fadeIn">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-[#00D4FF] font-mono">Step 1: Define Parent Organization</h2>
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Organization Name *</label>
+          <input type="text" formControlName="orgName" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Organization Code *</label>
+            <input type="text" formControlName="orgCode" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white uppercase focus:outline-none focus:border-[#00D4FF] font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Display Label</label>
+            <input type="text" formControlName="displayName" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-end">
+          <button type="button" (click)="goToStep(2)" class="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[#00D4FF] hover:bg-sky-400 transition-all cursor-pointer shadow-md shadow-[#00D4FF]/20">
+            Next: Tenant Setup &rarr;
+          </button>
+        </div>
+      </div>
+
+      <!-- STEP 2: Tenant & Application -->
+      <div *ngIf="currentStep() === 2" class="space-y-4 animate-fadeIn">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-[#00D4FF] font-mono">Step 2: Tenant Partition & Product Binding</h2>
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 mb-1">Tenant Name *</label>
+          <input type="text" formControlName="tenantName" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+        </div>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Tenant Identifier *</label>
+            <input type="text" formControlName="tenantIdentifier" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white uppercase focus:outline-none focus:border-[#00D4FF] font-mono" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Primary Product Suite</label>
+            <app-custom-select
+              formControlName="applicationKey"
+              [options]="appOptions"
+              placeholder="Select Product Suite">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-between">
+          <button type="button" (click)="goToStep(1)" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">
+            &larr; Back
+          </button>
+          <button type="button" (click)="goToStep(3)" class="px-5 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[#00D4FF] hover:bg-sky-400 transition-all cursor-pointer shadow-md shadow-[#00D4FF]/20">
+            Next: Admin Credentials &rarr;
+          </button>
+        </div>
+      </div>
+
+
+      <!-- STEP 3: Admin & Launch -->
+      <div *ngIf="currentStep() === 3" class="space-y-4 animate-fadeIn">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-[#00D4FF] font-mono">Step 3: Tenant Administrator Account</h2>
+        
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Admin First Name *</label>
+            <input type="text" formControlName="adminFirstName" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Admin Last Name *</label>
+            <input type="text" formControlName="adminLastName" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Admin Email *</label>
+            <input type="email" formControlName="adminEmail" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-sans" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1">Initial Password</label>
+            <input type="password" formControlName="adminPassword" class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] font-mono" />
+          </div>
+        </div>
+
+        <div class="pt-4 flex justify-between">
+          <button type="button" (click)="goToStep(2)" class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">
+            &larr; Back
+          </button>
+          <button
+            type="button"
+            (click)="submitOnboarding()"
+            [disabled]="isSubmitting()"
+            class="px-6 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[#00D4FF] hover:bg-sky-400 transition-all cursor-pointer shadow-lg shadow-[#00D4FF]/25 disabled:opacity-60"
+          >
+            <span *ngIf="!isSubmitting()">Provision & Launch Tenant</span>
+            <span *ngIf="isSubmitting()">Provisioning Pipeline Running...</span>
+          </button>
+        </div>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Success State View -->
+  <div *ngIf="isSuccess()" class="p-8 rounded-2xl border border-[#232328] bg-[#101013] text-center space-y-4 shadow-2xl animate-fadeIn">
+    <div class="w-16 h-16 rounded-full bg-[#00D4FF]/15 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] mx-auto text-2xl">
+      &check;
+    </div>
+    <div>
+      <h2 class="text-xl font-bold text-white font-display">Provisioning Pipeline Executed</h2>
+      <p class="text-xs text-slate-400 mt-1">Tenant partition, schema bindings, and initial administrator have been provisioned.</p>
+    </div>
+    <div class="pt-2">
+      <a routerLink="/tenants" class="inline-block px-5 py-2.5 rounded-xl font-bold text-xs text-slate-950 bg-[#00D4FF] hover:bg-sky-400 transition-all shadow-md">
+        View in Tenants Directory &rarr;
+      </a>
+    </div>
+  </div>
+
+</div>

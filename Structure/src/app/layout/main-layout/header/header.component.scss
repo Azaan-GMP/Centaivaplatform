@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  width: 100%;
+  position: relative;
+  z-index: 100;
+}
+
+.header-glass-bar {
+  background: #0d0d10;
+  border-bottom: 1px solid #27272a;
+  position: relative;
+  z-index: 100;
+}
+
+.command-search-input {
+  background: #141418 !important;
+  border: 1px solid #27272a !important;
+  color: #fafafa !important;
+  transition: all 0.2s ease !important;
+
+  &:hover {
+    border-color: #3f3f46 !important;
+  }
+
+  &:focus {
+    border-color: #10b981 !important;
+    background: #18181c !important;
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  }
+}
+
+.header-dropdown-menu {
+  background: rgba(18, 18, 21, 0.98);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(16, 185, 129, 0.15);
+  position: absolute;
+  z-index: 200;
+}
+
+
+@keyframes dropdownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-dropdownFade {
+  animation: dropdownFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Light Theme Overrides */
+:host-context(html.light),
+:host-context(html.theme-light),
+:host-context(html[data-theme='light']) {
+  .header-glass-bar {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+
+  .command-search-input {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #0f172a !important;
+
+    &:focus {
+      border-color: #059669 !important;
+      box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.12) !important;
+    }
+  }
+
+  .header-dropdown-menu {
+    background: #ffffff !important;
+    border: 1px solid #e2e8f0 !important;
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.1) !important;
+  }
+}

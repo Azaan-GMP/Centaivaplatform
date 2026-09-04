@@ -1,0 +1,650 @@
+<div class="space-y-4 pb-6 animate-fadeIn">
+
+  <!-- Top Page Title & Stats Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white font-display">
+          Products Catalog
+        </h1>
+        <span
+          class="px-2.5 py-0.5 text-xs font-bold font-mono rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm">
+          {{ filteredProducts().length }} Total
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 font-mono mt-0.5">
+        Enterprise Product Suites &bull; Core Platform Engines &amp; Partition Provisioning
+      </p>
+    </div>
+
+    <!-- Top Action Buttons -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <button
+        *ngIf="selectedProductIds().size > 0"
+        type="button"
+        (click)="confirmBulkDelete()"
+        class="flex items-center gap-1.5 px-3 py-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-800/60 rounded-xl transition-all cursor-pointer shadow-md"
+      >
+        <app-icon name="trash" size="13"></app-icon>
+        <span>Delete ({{ selectedProductIds().size }})</span>
+      </button>
+
+      <button type="button" (click)="openCreateModal()"
+        class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/20 transition-all active:scale-95 cursor-pointer">
+        <app-icon name="plus" size="14"></app-icon>
+        <span>New Product</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Filter, Search & View Controls Bar -->
+  <div
+    class="relative z-30 p-3 rounded-2xl prod-glass-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+
+    <!-- Real-time Search Input -->
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <app-icon name="search" size="14"></app-icon>
+      </div>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+        placeholder="Search by product name, key, ID, or version..."
+        class="w-full pl-9 pr-8 py-2 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00D4FF] transition-all font-medium" />
+      <button *ngIf="searchQuery" type="button" (click)="clearSearch()"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-sm">
+        &times;
+      </button>
+    </div>
+
+    <!-- Right Controls: Status + Sort + View Toggle + Refresh -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+
+      <!-- Status Filter -->
+      <div class="w-36">
+        <app-custom-select [options]="statusOptions" [value]="statusFilter"
+          (valueChange)="onStatusChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Sort Filter -->
+      <div class="w-40">
+        <app-custom-select [options]="sortOptions" [value]="sortBy"
+          (valueChange)="onSortChange($event)"></app-custom-select>
+      </div>
+
+      <!-- View Switcher (Table vs Grid) -->
+      <div class="flex items-center bg-[#18181c] border border-[#232328] rounded-xl p-0.5">
+        <button type="button" (click)="setViewMode('table')"
+          [ngClass]="viewMode() === 'table' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer" title="Table View">
+          <app-icon name="table" size="14"></app-icon>
+        </button>
+        <button type="button" (click)="setViewMode('grid')"
+          [ngClass]="viewMode() === 'grid' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer" title="Grid View">
+          <app-icon name="grid" size="14"></app-icon>
+        </button>
+      </div>
+
+      <!-- Live Refresh Button -->
+      <button type="button" (click)="loadProducts()" [disabled]="isLoading()"
+        class="p-2 bg-[#18181c] border border-[#27272a] rounded-xl text-slate-400 hover:text-[#00D4FF] hover:border-[#00D4FF]/40 transition-all cursor-pointer disabled:opacity-50"
+        title="Sync live records">
+        <app-icon name="refresh" size="14" [class.animate-spin]="isLoading()"></app-icon>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="p-12 text-center space-y-3">
+    <div class="w-10 h-10 border-2 border-[#00D4FF] border-t-transparent rounded-full animate-spin mx-auto"></div>
+    <p class="text-xs text-slate-400 font-mono">Loading product suites catalog...</p>
+  </div>
+
+  <!-- VIEW 1: TABLE VIEW (DEFAULT) -->
+  <div *ngIf="!isLoading() && viewMode() === 'table'" class="space-y-3">
+    <div class="rounded-2xl border border-[#232328] bg-[#101013] overflow-hidden shadow-2xl prod-table-wrapper">
+      <table class="w-full text-left text-xs text-slate-300 font-sans border-collapse">
+
+        <!-- Table Header -->
+        <thead
+          class="bg-[#18181c] border-b border-[#232328] text-[11px] font-mono uppercase tracking-wider text-slate-400">
+          <tr>
+            <th class="py-3.5 px-4 font-bold">Product Suite</th>
+            <th class="py-3.5 px-4 font-bold">Key Identifier</th>
+            <th class="py-3.5 px-4 font-bold">Version &amp; Engine</th>
+            <th class="py-3.5 px-4 font-bold">Status</th>
+            <th class="py-3.5 px-4 font-bold text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <!-- Table Rows -->
+        <tbody class="divide-y divide-[#232328]">
+
+          <tr *ngFor="let prod of paginatedProducts()" class="transition-colors group hover:bg-[#18181c] prod-table-row">
+            <!-- Product Name & Icon -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-8 h-8 rounded-lg bg-[#18181c] border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shrink-0 font-mono font-bold text-xs shadow-inner">
+                  {{ prod.name ? prod.name.substring(0, 2).toUpperCase() : 'PR' }}
+                </div>
+                <div class="min-w-0">
+                  <span
+                    class="font-bold text-white group-hover:text-[#00D4FF] transition-colors text-xs truncate block">
+                    {{ prod.name }}
+                  </span>
+                  <span class="text-[11px] text-slate-400 block truncate" *ngIf="prod.description">
+                    {{ prod.description }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Key Identifier -->
+            <td class="py-3 px-4 font-mono">
+              <button
+                type="button"
+                (click)="copyKey(prod.key, $event)"
+                title="Click to copy Product Key"
+                class="px-2 py-0.5 bg-[#18181c] hover:bg-[#00D4FF]/20 border border-[#27272a] hover:border-[#00D4FF]/40 rounded text-[#00D4FF] font-bold text-[11px] transition-colors inline-flex items-center gap-1 cursor-pointer">
+                <span>{{ prod.key || 'N/A' }}</span>
+                <app-icon name="clipboard" size="10" class="opacity-60"></app-icon>
+              </button>
+            </td>
+
+            <!-- Version & Engine -->
+            <td class="py-3 px-4 font-mono">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-sky-500/10 text-[#00D4FF] border border-[#00D4FF]/30">
+                  v{{ prod.version || '1.0.0' }}
+                </span>
+                <span class="text-[10px] text-slate-400">Core Engine</span>
+              </div>
+            </td>
+
+            <!-- Status -->
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+                [ngClass]="formatStatus(prod.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]'">
+                {{ formatStatus(prod.status) }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button" (click)="openEditModal(prod, $event)"
+                  class="p-1.5 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 border border-transparent hover:border-[#00D4FF]/30 rounded-lg transition-all cursor-pointer"
+                  title="Edit product">
+                  <app-icon name="edit" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="confirmDeleteProduct(prod, $event)"
+                  class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/30 rounded-lg transition-all cursor-pointer"
+                  title="Delete product">
+                  <app-icon name="trash" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="viewDetails(prod)"
+                  class="px-3 py-1 text-xs font-bold text-[#00D4FF] hover:text-white hover:bg-[#00D4FF]/20 border border-[#00D4FF]/40 rounded-lg transition-all cursor-pointer">
+                  Details &rarr;
+                </button>
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="paginatedProducts().length === 0">
+            <td colspan="5" class="text-center py-10 text-slate-400 font-mono">
+              <p class="text-sm font-bold text-slate-300">No products found</p>
+              <p class="text-xs text-slate-500 mt-1">Try adjusting your search query or status filter.</p>
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- Table Pagination Footer -->
+    <div
+      class="px-4 py-3 border border-[#232328] rounded-2xl bg-[#101013] flex items-center justify-between text-xs text-slate-400 font-mono prod-glass-bar">
+      <span>
+        Showing <strong class="text-slate-200">{{ paginatedProducts().length }}</strong> of <strong
+          class="text-slate-200">{{ filteredProducts().length }}</strong> products
+      </span>
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Previous
+        </button>
+        <span class="px-2 font-bold text-slate-300">{{ currentPage() }} / {{ totalPages() || 1 }}</span>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: GRID VIEW -->
+  <div *ngIf="!isLoading() && viewMode() === 'grid'" class="space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+      <div *ngFor="let prod of paginatedProducts()"
+        class="group relative p-4 rounded-2xl border border-[#232328] bg-[#101013] hover:bg-[#18181c] hover:border-[#00D4FF]/40 transition-all duration-200 shadow-xl flex flex-col justify-between prod-card">
+        <div>
+          <!-- Header with Code & Status -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div
+              class="w-9 h-9 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold text-xs font-mono shadow-md">
+              {{ prod.name ? prod.name.substring(0, 2).toUpperCase() : 'PR' }}
+            </div>
+            <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+              [ngClass]="formatStatus(prod.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]'">
+              {{ formatStatus(prod.status) }}
+            </span>
+          </div>
+
+          <!-- Name & Unique Code -->
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors line-clamp-1">
+              {{ prod.name }}
+            </h3>
+            <p class="text-[10px] font-mono text-[#00D4FF] font-semibold">{{ prod.key || 'N/A' }}</p>
+            <p class="text-xs text-slate-400 line-clamp-2 mt-1">{{ prod.description || 'Enterprise product platform module.' }}</p>
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-2.5 border-t border-[#232328] flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono">
+            <app-icon name="layers" size="13" class="text-[#00D4FF]"></app-icon>
+            <span class="font-bold text-slate-200">v{{ prod.version || '1.0.0' }}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button type="button" (click)="openEditModal(prod, $event)"
+              class="p-1 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-colors cursor-pointer"
+              title="Edit product">
+              <app-icon name="edit" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="confirmDeleteProduct(prod, $event)"
+              class="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+              title="Delete product">
+              <app-icon name="trash" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="viewDetails(prod)"
+              class="text-xs font-bold text-[#00D4FF] hover:text-sky-300 flex items-center gap-1 cursor-pointer transition-colors">
+              <span>Details</span>
+              <app-icon name="arrowRight" size="11"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid Pagination Footer -->
+    <div class="p-3 rounded-2xl prod-glass-bar flex items-center justify-between text-xs text-slate-400 font-mono">
+      <span>Page {{ currentPage() }} of {{ totalPages() || 1 }}</span>
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Previous
+        </button>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRODUCT DETAILS DRAWER -->
+  <div *ngIf="selectedProduct()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+    <div
+      class="w-full max-w-2xl rounded-2xl prod-modal-card p-6 shadow-2xl space-y-5 border border-[#232328] bg-[#101013] overflow-hidden flex flex-col max-h-[85vh]">
+
+      <!-- Drawer Header -->
+      <div class="flex items-start justify-between border-b border-[#232328] pb-4 shrink-0">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold font-mono text-base shadow-lg">
+            {{ selectedProduct()?.name ? selectedProduct()?.name?.substring(0, 2)?.toUpperCase() : 'PR' }}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white font-display">{{ selectedProduct()?.name }}</h2>
+              <span
+                class="px-2 py-0.5 text-[9px] font-bold uppercase rounded font-mono bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40">
+                {{ formatStatus(selectedProduct()?.status) }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">Key: <span class="text-[#00D4FF] font-bold">{{
+                selectedProduct()?.key }}</span></p>
+          </div>
+        </div>
+        <button type="button" (click)="closeDetails()"
+          class="w-8 h-8 rounded-lg bg-[#18181c] text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+          &times;
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="space-y-4 overflow-y-auto pr-1 flex-1">
+
+        <!-- Metadata Matrix -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Product ID</span>
+            <span class="text-slate-300 truncate block text-[11px]" [title]="selectedProduct()?.id">{{ selectedProduct()?.id }}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Release Version</span>
+            <span class="text-[#00D4FF] font-bold text-sm">v{{ selectedProduct()?.version || '1.0.0' }}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328] col-span-2 sm:col-span-1">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Engine Architecture</span>
+            <span class="text-slate-300 text-[11px]">Zero-Trust Core</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">Product Suite Description</span>
+          <p class="text-xs text-slate-300 leading-relaxed">{{ selectedProduct()?.description || 'Enterprise platform module providing core application services and multi-tenant partitioning capabilities.' }}</p>
+        </div>
+
+        <!-- Enterprise Capabilities Matrix -->
+        <div class="p-4 rounded-xl bg-[#18181c] border border-[#232328] space-y-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Platform Capabilities</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Multi-Tenant Partitioning</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">OAuth2 Token Exchange</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Audit Trail Verification</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Role-Based Access Control</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Modal Footer -->
+      <div class="pt-4 mt-2 border-t border-[#232328] flex items-center justify-between shrink-0">
+        <button type="button" (click)="confirmDeleteProduct(selectedProduct()!); closeDetails()"
+          class="px-3.5 py-2 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/40 hover:bg-rose-900 border border-rose-800/60 rounded-xl cursor-pointer transition-colors shadow-md flex items-center gap-1.5">
+          <app-icon name="trash" size="13"></app-icon>
+          <span>Delete Product</span>
+        </button>
+        <button type="button" (click)="closeDetails()"
+          class="px-5 py-2 text-xs font-bold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl cursor-pointer transition-colors shadow-md">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Create Product Modal -->
+  <div *ngIf="isCreateModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl prod-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="layers" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Register New Product</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">Provision enterprise product suite in central catalog</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeCreateModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="createProductForm" (ngSubmit)="onCreateSubmit()" class="space-y-4" novalidate>
+
+        <!-- Product Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Product Name <span class="text-[#00D4FF] font-bold">*</span></span>
+            <span class="text-[10px] text-slate-400 font-mono">Catalog Suite</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="layers" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. WorkWell Finance"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- Product Key & Version Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+              <span>Product Key <span class="text-[#00D4FF] font-bold">*</span></span>
+            </label>
+            <div class="relative">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+                <app-icon name="key" size="15"></app-icon>
+              </div>
+              <input type="text" formControlName="key" placeholder="WORKWELL_FINANCE"
+                class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white uppercase placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-mono transition-all" />
+            </div>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Release Version</label>
+            <input type="text" formControlName="version" placeholder="1.0.0"
+              class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-mono transition-all" />
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Description</span>
+            <span class="text-[10px] text-slate-400">Capabilities Scope</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-3 text-slate-400 pointer-events-none z-10">
+              <app-icon name="fileText" size="15"></app-icon>
+            </div>
+            <textarea formControlName="description" rows="2"
+              placeholder="Enterprise accounting, payroll integration, and general ledger operations..."
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all font-sans"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeCreateModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="createProductForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="plusIcon" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Provisioning...' : 'Register Product' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Product Modal -->
+  <div *ngIf="isEditModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl prod-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="edit" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Edit Product Suite</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">{{ productToEdit()?.key }}</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeEditModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="editProductForm" (ngSubmit)="onEditSubmit()" class="space-y-4" novalidate>
+
+        <!-- Product Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Product Name <span class="text-[#00D4FF] font-bold">*</span></span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="layers" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. WorkWell Finance"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- Version & Status Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Release Version</label>
+            <input type="text" formControlName="version"
+              class="w-full px-3.5 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-mono transition-all" />
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Status</label>
+            <app-custom-select
+              formControlName="status"
+              [options]="modalStatusOptions"
+              placeholder="Select Status">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200">Description</label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-3 text-slate-400 pointer-events-none z-10">
+              <app-icon name="fileText" size="15"></app-icon>
+            </div>
+            <textarea formControlName="description" rows="2"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all font-sans"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeEditModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="editProductForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="check" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Saving...' : 'Save Changes' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Product Confirmation Modal -->
+  <div *ngIf="productToDelete()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-900/50 bg-[#101013] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-rose-400">
+        <div class="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-800 flex items-center justify-center">
+          <app-icon name="trash" size="18"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Delete Product Suite</h2>
+          <p class="text-xs text-rose-400">Permanent Database Deletion</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Are you sure you want to permanently delete <strong class="text-white">{{ productToDelete()?.name }}</strong>? This will remove its registered catalog definitions and bindings.
+      </p>
+
+      <div class="pt-3 flex items-center justify-end gap-2 border-t border-[#232328]">
+        <button type="button" (click)="cancelDeleteProduct()"
+          class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+        <button type="button" (click)="executeDeleteProduct()" [disabled]="isDeleting()"
+          class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl cursor-pointer">
+          {{ isDeleting() ? 'Deleting...' : 'Delete Product' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulk Delete Confirmation Modal -->
+  <div *ngIf="isBulkDeleteModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-900/50 bg-[#101013] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-rose-400">
+        <div class="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-800 flex items-center justify-center">
+          <app-icon name="trash" size="18"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Bulk Delete Products</h2>
+          <p class="text-xs text-rose-400">Permanent Batch Deletion</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Are you sure you want to permanently delete <strong class="text-white">{{ selectedProductIds().size }}</strong> selected product suites?
+      </p>
+
+      <div class="pt-3 flex items-center justify-end gap-2 border-t border-[#232328]">
+        <button type="button" (click)="cancelBulkDelete()"
+          class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+        <button type="button" (click)="executeBulkDelete()" [disabled]="isDeleting()"
+          class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl cursor-pointer">
+          {{ isDeleting() ? 'Deleting...' : 'Delete Selected' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

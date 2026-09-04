@@ -1,0 +1,1513 @@
+###############################################################################
+# CENTAIVA PLATFORM UI
+# FULL QA + PRODUCTION IMPLEMENTATION / VERIFICATION TEST
+#
+# Source contract: Centaiva.Platform.Api OpenAPI v1
+#
+# PURPOSE
+# - Implement and verify the Centaiva Platform Owner UI
+# - QA first, then Production read-only verification
+# - Central user / tenant / organization / RBAC administration
+# - WorkWell Finance tenant discovery and switching
+# - MedPure visibility through Centaiva Platform
+# - Generic + WorkWell delegated onboarding
+#
+# IMPORTANT SECURITY MODEL
+# - Centaiva is the identity and tenant authority.
+# - Centaiva Platform Control token is tenantless for Platform Owner.
+# - A final product token such as WORKWELL_FINANCE is bound to one application + one tenant.
+# - Do not switch WorkWell by changing CompId locally.
+# - Use /api/v1/me/select-tenant for initial selection.
+# - Use /api/v1/me/switch-tenant after login.
+# - The compatibility /select-tenant route may also accept a final same-app token.
+###############################################################################
+
+
+###############################################################################
+# 0 - URLS
+###############################################################################
+
+# QA
+@qaCentaivaUrl = http://192.168.88.27:8081
+@qaWorkwellUrl = http://192.168.88.27:8091
+@qaWorkwellWebUrl = http://localhost:4200
+
+# Production
+@prodCentaivaUrl = https://oauth.centaiva.com
+@prodWorkwellUrl = https://api.workwell.centaiva.com
+@prodWorkwellWebUrl = https://workwell.centaiva.com
+
+
+###############################################################################
+# 0A - SSO / APPLICATIONS
+###############################################################################
+
+@platformClientId = centaiva-platform-web
+@platformScope = openid%20profile%20email%20roles%20centaiva.platform
+
+@financeClientId = workwell-finance-web
+@financeScope = openid%20profile%20email%20roles%20workwell.finance
+@financeApplicationKey = WORKWELL_FINANCE
+@financeApplicationId = 1DECD47E-4A96-F111-80F8-00155D581206
+
+# MedPure is another tenant inside WORKWELL_FINANCE.
+# It intentionally uses the same WorkWell Finance application/client.
+@medpureClientId = workwell-finance-web
+@medpureScope = openid%20profile%20email%20roles%20workwell.finance
+@medpureApplicationKey = WORKWELL_FINANCE
+@medpureApplicationId = 1DECD47E-4A96-F111-80F8-00155D581206
+
+
+###############################################################################
+# 0B - COPY/PASTE CREDENTIALS
+###############################################################################
+
+# CENTAIVA PLATFORM OWNER / SSO
+@platformOwnerEmail = talha.hassan@centaiva.com
+@platformOwnerPassword = Password123!
+@mfaCode = REPLACE_WITH_CURRENT_6_DIGIT_MFA
+
+# WORKWELL FINANCE
+@superAdminEmail = superadmin@workwell.com
+@superAdminPassword = Password123!
+
+@workwellYvesEmail = yvesb@workwelloutsourcing.com
+@workwellYvesPassword = Yvesb.workwell@123
+
+@matthewEmail = matthew.jaques@workwelloutsourcing.com
+@matthewPassword = Matthew.jaques123!@#
+
+@paulEmail = paul.griffin@workwelloutsourcing.com
+@paulPassword = Paul.griffin123#@!
+
+# MEDPURE
+@medpureYvesEmail = yvesb@medpure.com
+@medpureYvesPassword = Yvesb.medpure@123
+
+
+###############################################################################
+# 0C - TENANTS / COMPANY MAPPING
+###############################################################################
+
+# Known WorkWell Finance tenant
+@eutopiaTenantId = D445FE51-5196-F111-80F8-00155D581206
+@eutopiaCompId = 1
+
+# Fill after Platform -> Tenants confirms the actual records.
+@patrickMorganTenantId = REPLACE_WITH_PATRICK_MORGAN_TENANT_GUID
+@patrickMorganCompId = REPLACE_WITH_PATRICK_MORGAN_WORKWELL_COMPID
+
+@medpureTenantId = REPLACE_WITH_MEDPURE_TENANT_GUID
+
+
+###############################################################################
+# 0D - EXPECTED ACCESS / HIERARCHY MODEL
+###############################################################################
+
+# WORKWELL_FINANCE product/application
+#
+#   WorkWell parent organization
+#     - Eutopia Search tenant/company
+#     - Patrick Morgan tenant/company
+#
+#   MedPure tenant/company
+#
+# talha.hassan@centaiva.com
+#   Platform Owner
+#   Can centrally see/select all three WORKWELL_FINANCE tenants:
+#     - Eutopia Search
+#     - Patrick Morgan
+#     - MedPure
+#
+# yvesb@workwelloutsourcing.com
+#   WORKWELL_FINANCE:
+#     - Eutopia Search
+#     - Patrick Morgan
+#
+# yvesb@medpure.com
+#   WORKWELL_FINANCE:
+#     - MedPure only
+###############################################################################
+
+
+
+###############################################################################
+###############################################################################
+# PART A - QA PLATFORM OWNER LOGIN / SHELL BOOTSTRAP
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# A1 - QA PLATFORM OWNER LOGIN
+# Expected: 200 token
+###############################################################################
+
+# @name qaPlatformOwnerLogin
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=centaiva-platform-web&username=talha.hassan@centaiva.com&password=Password123!&scope=openid%20profile%20email%20roles%20centaiva.platform
+
+###
+
+
+###############################################################################
+# A2 - CURRENT CONTEXT
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/context/me HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# A3 - PLATFORM BOOTSTRAP
+# UI use:
+# - shell identity
+# - top-level navigation
+# - platform metadata
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/bootstrap HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# A4 - PLATFORM OWNER ADMIN SCOPE
+# UI should use this to decide global control visibility.
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/me/admin-scope HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# A5 - MY ADMIN SCOPE
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/me/admin-scope HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# A6 - PLATFORM CONTROL TOKEN IS TENANTLESS
+#
+# Do NOT call /api/v1/me/session-policy with qaPlatformOwnerLogin.
+# Session policy is tenant-specific and is tested after a WORKWELL_FINANCE
+# tenant has been selected and exchanged for a final tenant-bound token.
+#
+# Expected Platform token:
+#   application = CENTAIVA_CONTROL_WEB
+#   role includes PLATFORM_OWNER
+#   tenant_id absent
+###############################################################################
+
+
+###############################################################################
+# A7 - CENTRAL ACCESS SNAPSHOT
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/me/access-snapshot HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART B - QA PLATFORM DIRECTORY UI
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# B1 - USERS PAGE
+# UI:
+# - pagination
+# - search
+# - status
+# - includeDeleted toggle
+###############################################################################
+
+# @name qaUsers
+GET {{qaCentaivaUrl}}/api/v1/platform/users?page=1&pageSize=100 HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/platform/users?search=yves&page=1&pageSize=25 HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B2 - LOOK UP KNOWN USERS
+###############################################################################
+
+# @name qaTalha
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{platformOwnerEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+# @name qaWorkwellYves
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{workwellYvesEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+# @name qaMedpureYves
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{medpureYvesEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+# @name qaSuperAdmin
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{superAdminEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B3 - ORGANIZATIONS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/organizations?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B4 - TENANTS
+# Expected UI to include:
+# - Eutopia Search
+# - Patrick Morgan
+# - MedPure
+###############################################################################
+
+# @name qaTenants
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B5 - RESOLVE TENANTS BY DISPLAY IDENTIFIER
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=Eutopia&includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=Patrick%20Morgan&includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=MedPure&includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B6 - PRODUCTS
+###############################################################################
+
+# @name qaProducts
+GET {{qaCentaivaUrl}}/api/v1/platform/products?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B7 - APPLICATIONS
+# UI must derive application/client/product choices from central metadata.
+###############################################################################
+
+# @name qaApplications
+GET {{qaCentaivaUrl}}/api/v1/platform/applications?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B8 - WORKWELL FINANCE APPLICATION DETAIL DATA
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/applications/{{financeApplicationId}}/modules?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/platform/applications/{{financeApplicationId}}/features?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+# @name qaFinancePermissions
+GET {{qaCentaivaUrl}}/api/v1/platform/applications/{{financeApplicationId}}/permissions?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B9 - ROLES
+###############################################################################
+
+# @name qaFinanceRolesEutopia
+GET {{qaCentaivaUrl}}/api/v1/platform/roles?applicationId={{financeApplicationId}}&tenantId={{eutopiaTenantId}}&includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B10 - INTEGRATION PROVIDERS / TENANT INTEGRATIONS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/integration-providers?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/platform/integrations?tenantId={{eutopiaTenantId}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B11 - AUDIT PAGE
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/audit-events?page=1&pageSize=50 HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B12 - FEATURE FLAGS PAGE
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/feature-flags?includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# B13 - SERVICE ACCOUNTS PAGE
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/service-accounts HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART C - QA TENANT DETAIL / MEMBERS / EFFECTIVE ACCESS
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# C1 - EUTOPIA TENANT DETAIL
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/{{eutopiaTenantId}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# C2 - EUTOPIA MEMBERS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/{{eutopiaTenantId}}/members HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# C3 - EUTOPIA INVITATIONS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/{{eutopiaTenantId}}/invitations HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# C4 - YVES WORKWELL EFFECTIVE ACCESS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/users/{{qaWorkwellYves.response.body.$.id}}/access?applicationKey={{financeApplicationKey}}&tenantId={{eutopiaTenantId}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# C5 - ROLE ASSIGNMENTS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/role-assignments?userId={{qaWorkwellYves.response.body.$.id}}&tenantId={{eutopiaTenantId}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART D - QA SCOPED CONTROL UI
+###############################################################################
+###############################################################################
+
+
+GET {{qaCentaivaUrl}}/api/v1/control/bootstrap HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/control/organizations HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/control/tenants HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/control/products HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/control/users HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART E - QA WORKWELL FINANCE PRODUCT LOGIN + TENANT PICKER
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# E1 - TALHA ENTERS WORKWELL FINANCE THROUGH PRODUCT CLIENT
+#
+# If Talha has >1 eligible WORKWELL_FINANCE tenant:
+#   expected token_purpose = tenant_selection
+#   tenant_id absent
+#
+# If only one eligible tenant:
+#   Centaiva may auto-select and issue final Finance token.
+###############################################################################
+
+# @name qaTalhaFinancePreLogin
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=workwell-finance-web&username=talha.hassan@centaiva.com&password=Password123!&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+
+###############################################################################
+# E2 - ELIGIBLE WORKWELL FINANCE TENANTS
+# Expected for Platform Owner when WORKWELL_FINANCE access/subscriptions are active:
+# - Eutopia Search
+# - Patrick Morgan
+# - MedPure
+###############################################################################
+
+# @name qaTalhaFinanceTenants
+GET {{qaCentaivaUrl}}/api/v1/me/tenants?applicationKey={{financeApplicationKey}} HTTP/1.1
+Authorization: Bearer {{qaTalhaFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# E3 - SELECT EUTOPIA
+###############################################################################
+
+# @name qaSelectEutopia
+POST {{qaCentaivaUrl}}/api/v1/me/select-tenant HTTP/1.1
+Authorization: Bearer {{qaTalhaFinancePreLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tenantId": "{{eutopiaTenantId}}",
+  "applicationKey": "{{financeApplicationKey}}"
+}
+
+###
+
+
+###############################################################################
+# E4 - EXCHANGE SELECTION CODE
+###############################################################################
+
+# @name qaEutopiaFinanceToken
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn%3Acentaiva%3Aparams%3Aoauth%3Agrant-type%3Atenant-selection&client_id={{financeClientId}}&selection_code={{qaSelectEutopia.response.body.$.selectionCode}}&scope={{financeScope}}
+
+###
+
+
+###############################################################################
+# E5 - VERIFY WORKWELL CONTEXT
+###############################################################################
+
+GET {{qaWorkwellUrl}}/api/platform-context HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/companies/me HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/users HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/roles HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# E5A - TENANT-BOUND SESSION POLICY
+#
+# This is the correct place to test tenant authentication policy.
+# Expected target: maxSessionHours=10, idleTimeoutMinutes=600 where configured.
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/me/session-policy HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# E6 - SWITCH EUTOPIA -> PATRICK MORGAN
+#
+# Fill @patrickMorganTenantId first.
+# Canonical UI route after final login = /api/v1/me/switch-tenant
+###############################################################################
+
+# @name qaSwitchToPatrickMorgan
+POST {{qaCentaivaUrl}}/api/v1/me/switch-tenant HTTP/1.1
+Authorization: Bearer {{qaEutopiaFinanceToken.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tenantId": "{{patrickMorganTenantId}}",
+  "applicationKey": "{{financeApplicationKey}}"
+}
+
+###
+
+
+# @name qaPatrickMorganFinanceToken
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn%3Acentaiva%3Aparams%3Aoauth%3Agrant-type%3Atenant-selection&client_id={{financeClientId}}&selection_code={{qaSwitchToPatrickMorgan.response.body.$.selectionCode}}&scope={{financeScope}}
+
+###
+
+
+GET {{qaWorkwellUrl}}/api/platform-context HTTP/1.1
+Authorization: Bearer {{qaPatrickMorganFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# E7 - NEGATIVE ISOLATION TEST
+# Patrick Morgan token must not be able to force Eutopia CompId.
+# Expected: 403.
+###############################################################################
+
+GET {{qaWorkwellUrl}}/api/dashboard/financial-dashboard HTTP/1.1
+Authorization: Bearer {{qaPatrickMorganFinanceToken.response.body.$.access_token}}
+X-Company-Id: {{eutopiaCompId}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+# E8 - YVES WORKWELL LOGIN / TWO-CHILD ACCESS PROOF
+#
+# Expected eligible WORKWELL_FINANCE tenants:
+# - Eutopia Search
+# - Patrick Morgan
+# MedPure must NOT be returned for this account.
+###############################################################################
+
+# @name qaWorkwellYvesFinancePreLogin
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=workwell-finance-web&username=yvesb%40workwelloutsourcing.com&password=Yvesb.workwell%40123&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+GET {{qaCentaivaUrl}}/api/v1/me/tenants?applicationKey=WORKWELL_FINANCE HTTP/1.1
+Authorization: Bearer {{qaWorkwellYvesFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+###############################################################################
+# PART F - QA MEDPURE INSIDE WORKWELL_FINANCE
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# F1 - CENTRAL PLATFORM OWNER MUST SEE MEDPURE AS WORKWELL_FINANCE TENANT
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=MedPure&includeInactive=false HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F2 - MEDPURE YVES CENTRAL DIRECTORY LOOKUP
+###############################################################################
+
+# @name qaMedpureYvesUser
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{medpureYvesEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F3 - MEDPURE YVES WORKWELL FINANCE LOGIN
+#
+# MedPure is NOT a separate application.
+# Use workwell-finance-web + WORKWELL_FINANCE.
+#
+# If this account has only MedPure as an eligible tenant, Centaiva may
+# immediately return a final MedPure tenant-bound token (no picker required).
+###############################################################################
+
+# @name qaMedpureYvesFinancePreLogin
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=workwell-finance-web&username=yvesb@medpure.com&password=Yvesb.medpure%40123&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+
+###############################################################################
+# F4 - MEDPURE YVES ELIGIBLE WORKWELL FINANCE TENANTS
+#
+# Expected:
+#   MedPure only
+#   Eutopia Search absent
+#   Patrick Morgan absent
+###############################################################################
+
+# @name qaMedpureYvesTenants
+GET {{qaCentaivaUrl}}/api/v1/me/tenants?applicationKey=WORKWELL_FINANCE HTTP/1.1
+Authorization: Bearer {{qaMedpureYvesFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F4A - MEDPURE YVES FINAL TOKEN CONTEXT
+#
+# If F3 auto-issued a final token because MedPure is the only eligible tenant,
+# these requests must resolve MedPure and only MedPure.
+###############################################################################
+
+GET {{qaWorkwellUrl}}/api/platform-context HTTP/1.1
+Authorization: Bearer {{qaMedpureYvesFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/companies/me HTTP/1.1
+Authorization: Bearer {{qaMedpureYvesFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F5 - TALHA'S WORKWELL FINANCE TENANT PICKER
+#
+# Expected:
+#   Eutopia Search
+#   Patrick Morgan
+#   MedPure
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/me/tenants?applicationKey=WORKWELL_FINANCE HTTP/1.1
+Authorization: Bearer {{qaTalhaFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F6 - TALHA SELECTS MEDPURE USING SAME WORKWELL FINANCE CLIENT
+###############################################################################
+
+# @name qaSelectMedpure
+POST {{qaCentaivaUrl}}/api/v1/me/select-tenant HTTP/1.1
+Authorization: Bearer {{qaTalhaFinancePreLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tenantId": "{{medpureTenantId}}",
+  "applicationKey": "WORKWELL_FINANCE"
+}
+
+###
+
+
+# @name qaMedpureFinanceToken
+POST {{qaCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn%3Acentaiva%3Aparams%3Aoauth%3Agrant-type%3Atenant-selection&client_id=workwell-finance-web&selection_code={{qaSelectMedpure.response.body.$.selectionCode}}&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+
+###############################################################################
+# F7 - VERIFY MEDPURE RESOLVES TO ITS OWN WORKWELL COMPANY
+###############################################################################
+
+GET {{qaWorkwellUrl}}/api/platform-context HTTP/1.1
+Authorization: Bearer {{qaMedpureFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/companies/me HTTP/1.1
+Authorization: Bearer {{qaMedpureFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/users HTTP/1.1
+Authorization: Bearer {{qaMedpureFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{qaWorkwellUrl}}/api/roles HTTP/1.1
+Authorization: Bearer {{qaMedpureFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# F8 - MEDPURE ISOLATION
+#
+# MedPure final token must not resolve to Eutopia or Patrick Morgan CompId.
+# X-Company-Id must not override the Central tenant.
+# Expected: 403 when a different company id is forced.
+###############################################################################
+
+GET {{qaWorkwellUrl}}/api/dashboard/financial-dashboard HTTP/1.1
+Authorization: Bearer {{qaMedpureFinanceToken.response.body.$.access_token}}
+X-Company-Id: {{eutopiaCompId}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+###############################################################################
+# PART G - QA ONBOARDING UI
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# G1 - GENERIC ONBOARDING READINESS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/onboarding/readiness HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# G2 - WORKWELL DELEGATED ONBOARDING READINESS
+###############################################################################
+
+GET {{qaCentaivaUrl}}/api/v1/workwell/onboarding-readiness HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# G3 - GENERIC ONBOARDING WRITE TEMPLATE
+#
+# WRITE TEST. Do not run in Production unless intended.
+###############################################################################
+
+@parentOrganizationId = REPLACE_WITH_PARENT_ORGANIZATION_GUID
+@onboardRunKey = ui-qa-26082701
+
+POST {{qaCentaivaUrl}}/api/v1/onboarding/organizations HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "parentOrganizationId": "{{parentOrganizationId}}",
+  "organizationType": "Customer",
+  "organizationKey": "customer-{{onboardRunKey}}",
+  "organizationSlug": "customer-{{onboardRunKey}}",
+  "organizationName": "QA UI Customer {{onboardRunKey}}",
+  "productKey": "WORKWELL",
+  "planKey": "STANDARD",
+  "seats": 5,
+  "admin": {
+    "email": "qa.ui.admin+{{onboardRunKey}}@centaiva.test",
+    "displayName": "QA UI Admin",
+    "applicationRoles": [
+      {
+        "applicationKey": "WORKWELL_FINANCE",
+        "roleKey": "TENANT_ADMIN"
+      }
+    ],
+    "organizationAdmin": true,
+    "appliesToDescendants": true,
+    "canOnboardChildren": false,
+    "canDelegateAdministration": false,
+    "canDelegateCommercial": false,
+    "organizationRoleKey": "DELEGATED_ORG_ADMIN"
+  },
+  "createTenant": true,
+  "tenantKey": "tenant-{{onboardRunKey}}",
+  "tenantSlug": "tenant-{{onboardRunKey}}",
+  "tenantName": "QA UI Customer {{onboardRunKey}}",
+  "companyName": "QA UI Customer {{onboardRunKey}}",
+  "contactEmail": "qa.ui.admin+{{onboardRunKey}}@centaiva.test",
+  "environmentName": "QA"
+}
+
+###
+
+
+###############################################################################
+# G4 - WORKWELL CUSTOMER ONBOARDING WRITE TEMPLATE
+#
+# Preferred WorkWell-specific onboarding path.
+###############################################################################
+
+POST {{qaCentaivaUrl}}/api/v1/workwell/onboard-customer HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "parentOrganizationId": "{{parentOrganizationId}}",
+  "customerKey": "ww-{{onboardRunKey}}",
+  "customerSlug": "ww-{{onboardRunKey}}",
+  "customerName": "WorkWell QA Customer {{onboardRunKey}}",
+  "tenantKey": "ww-tenant-{{onboardRunKey}}",
+  "tenantSlug": "ww-tenant-{{onboardRunKey}}",
+  "tenantName": "WorkWell QA Customer {{onboardRunKey}}",
+  "planKey": "STANDARD",
+  "seats": 5,
+  "adminEmail": "qa.workwell.admin+{{onboardRunKey}}@centaiva.test",
+  "adminDisplayName": "QA WorkWell Admin",
+  "adminRoleKey": "TENANT_ADMIN",
+  "customerOrganizationType": "Customer",
+  "companyName": "WorkWell QA Customer {{onboardRunKey}}",
+  "contactEmail": "qa.workwell.admin+{{onboardRunKey}}@centaiva.test",
+  "environmentName": "QA"
+}
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART H - QA USER MANAGEMENT WRITE TEMPLATES
+#
+# Requires Platform Owner and, where policy requires, recent MFA.
+###############################################################################
+###############################################################################
+
+@uiTestUserEmail = centaiva.ui.qa.user@example.com
+@uiTestUserName = Centaiva UI QA User
+@uiTestUserTempPassword = UiQa.Password123!
+@uiTestUserNewPassword = UiQa.Password456!
+@targetRoleId = REPLACE_WITH_ROLE_GUID
+
+
+###############################################################################
+# H1 - CREATE USER
+###############################################################################
+
+# @name qaCreateUiUser
+POST {{qaCentaivaUrl}}/api/v1/platform/users HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "{{uiTestUserEmail}}",
+  "displayName": "{{uiTestUserName}}",
+  "temporaryPassword": "{{uiTestUserTempPassword}}",
+  "status": 1,
+  "emailConfirmed": true,
+  "mustChangePassword": true,
+  "preferredLocale": "en-GB",
+  "timeZoneId": "Europe/London"
+}
+
+###
+
+
+###############################################################################
+# H2 - LOOK UP USER
+###############################################################################
+
+# @name qaUiUser
+GET {{qaCentaivaUrl}}/api/v1/platform/users/by-email?email={{uiTestUserEmail}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# H3 - UPDATE USER
+###############################################################################
+
+PUT {{qaCentaivaUrl}}/api/v1/platform/users/{{qaUiUser.response.body.$.id}} HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "displayName": "{{uiTestUserName}}",
+  "phoneNumber": null,
+  "preferredLocale": "en-GB",
+  "timeZoneId": "Europe/London"
+}
+
+###
+
+
+###############################################################################
+# H4 - ADD USER TO EUTOPIA TENANT
+###############################################################################
+
+POST {{qaCentaivaUrl}}/api/v1/platform/tenants/{{eutopiaTenantId}}/members HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "userId": "{{qaUiUser.response.body.$.id}}",
+  "membershipStatus": "Active",
+  "isBillableSeat": true
+}
+
+###
+
+
+###############################################################################
+# H5 - ASSIGN ROLE
+###############################################################################
+
+POST {{qaCentaivaUrl}}/api/v1/role-assignments HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "roleId": "{{targetRoleId}}",
+  "userId": "{{qaUiUser.response.body.$.id}}",
+  "organizationId": null,
+  "tenantId": "{{eutopiaTenantId}}",
+  "expiresAtUtc": null
+}
+
+###
+
+
+###############################################################################
+# H6 - SUSPEND USER
+###############################################################################
+
+PUT {{qaCentaivaUrl}}/api/v1/platform/users/{{qaUiUser.response.body.$.id}}/status HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": 2,
+  "reason": "QA UI lifecycle verification"
+}
+
+###
+
+
+###############################################################################
+# H7 - REACTIVATE USER
+###############################################################################
+
+PUT {{qaCentaivaUrl}}/api/v1/platform/users/{{qaUiUser.response.body.$.id}}/status HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "status": 1,
+  "reason": "QA UI lifecycle verification completed"
+}
+
+###
+
+
+###############################################################################
+# H8 - RESET PASSWORD
+###############################################################################
+
+POST {{qaCentaivaUrl}}/api/v1/platform/users/{{qaUiUser.response.body.$.id}}/reset-password HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "newPassword": "{{uiTestUserTempPassword}}",
+  "mustChangePassword": true,
+  "reason": "QA UI password reset verification"
+}
+
+###
+
+
+###############################################################################
+# H9 - RESET MFA
+###############################################################################
+
+POST {{qaCentaivaUrl}}/api/v1/platform/users/{{qaUiUser.response.body.$.id}}/reset-mfa HTTP/1.1
+Authorization: Bearer {{qaPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+
+###############################################################################
+###############################################################################
+# PART P - PRODUCTION READ-ONLY UI VERIFICATION
+#
+# Do NOT run write templates against Production unless explicitly intended.
+###############################################################################
+###############################################################################
+
+
+###############################################################################
+# P1 - PRODUCTION PLATFORM OWNER LOGIN
+###############################################################################
+
+# @name prodPlatformOwnerLogin
+POST {{prodCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=centaiva-platform-web&username=talha.hassan@centaiva.com&password=Password123!&scope=openid%20profile%20email%20roles%20centaiva.platform
+
+###
+
+
+###############################################################################
+# P2 - PRODUCTION PLATFORM SHELL
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/platform/bootstrap HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/me/admin-scope HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+# Platform Owner Control token is tenantless.
+# Do NOT call /api/v1/me/session-policy until a tenant-bound product token exists.
+
+
+
+###############################################################################
+# P3 - PRODUCTION USERS
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/platform/users?page=1&pageSize=100 HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/users/by-email?email={{workwellYvesEmail}} HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/users/by-email?email={{medpureYvesEmail}} HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P4 - PRODUCTION TENANTS
+# Verify Eutopia Search, Patrick Morgan and MedPure are visible centrally under WORKWELL_FINANCE.
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/platform/tenants?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=Eutopia&includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=Patrick%20Morgan&includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/tenants/resolve?identifier=MedPure&includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P5 - PRODUCTION PRODUCTS / APPLICATIONS / RBAC / INTEGRATIONS
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/platform/products?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/applications?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/roles?applicationId={{financeApplicationId}}&tenantId={{eutopiaTenantId}}&includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/applications/{{financeApplicationId}}/permissions?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/integration-providers?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/integrations?tenantId={{eutopiaTenantId}} HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P6 - PRODUCTION ONBOARDING READINESS
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/onboarding/readiness HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/workwell/onboarding-readiness HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P7 - PRODUCTION AUDIT / FEATURE FLAGS / SERVICE ACCOUNTS
+###############################################################################
+
+GET {{prodCentaivaUrl}}/api/v1/platform/audit-events?page=1&pageSize=50 HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/feature-flags?includeInactive=false HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/platform/service-accounts HTTP/1.1
+Authorization: Bearer {{prodPlatformOwnerLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P8 - PRODUCTION WORKWELL FINANCE ENTRY / TENANT DISCOVERY
+###############################################################################
+
+# @name prodTalhaFinancePreLogin
+POST {{prodCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=password&client_id=workwell-finance-web&username=talha.hassan@centaiva.com&password=Password123!&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/me/tenants?applicationKey={{financeApplicationKey}} HTTP/1.1
+Authorization: Bearer {{prodTalhaFinancePreLogin.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# P9 - PRODUCTION READ-ONLY EUTOPIA SELECTION / TENANT POLICY
+#
+# This does not mutate tenant data. It only obtains a tenant-bound product token.
+###############################################################################
+
+# @name prodSelectEutopia
+POST {{prodCentaivaUrl}}/api/v1/me/select-tenant HTTP/1.1
+Authorization: Bearer {{prodTalhaFinancePreLogin.response.body.$.access_token}}
+Content-Type: application/json
+Accept: application/json
+
+{
+  "tenantId": "{{eutopiaTenantId}}",
+  "applicationKey": "WORKWELL_FINANCE"
+}
+
+###
+
+# @name prodEutopiaFinanceToken
+POST {{prodCentaivaUrl}}/connect/token HTTP/1.1
+Content-Type: application/x-www-form-urlencoded
+Accept: application/json
+
+grant_type=urn%3Acentaiva%3Aparams%3Aoauth%3Agrant-type%3Atenant-selection&client_id=workwell-finance-web&selection_code={{prodSelectEutopia.response.body.$.selectionCode}}&scope=openid%20profile%20email%20roles%20workwell.finance
+
+###
+
+GET {{prodCentaivaUrl}}/api/v1/me/session-policy HTTP/1.1
+Authorization: Bearer {{prodEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodWorkwellUrl}}/api/platform-context HTTP/1.1
+Authorization: Bearer {{prodEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+GET {{prodWorkwellUrl}}/api/companies/me HTTP/1.1
+Authorization: Bearer {{prodEutopiaFinanceToken.response.body.$.access_token}}
+Accept: application/json
+
+###
+
+
+###############################################################################
+# EXPECTED UI MODEL
+#
+# CENTAIVA PLATFORM
+#   Platform Control Login (tenantless)
+#     -> Bootstrap
+#     -> Admin scope
+#
+#   Product Tenant Login
+#     -> Select tenant
+#     -> Final tenant-bound token
+#     -> Session policy
+#
+#   Platform Owner navigation
+#     -> Overview
+#     -> Organizations
+#     -> Tenants
+#     -> Users
+#     -> Products
+#     -> Applications
+#     -> Modules / Features
+#     -> Roles / Permissions
+#     -> Integrations
+#     -> Onboarding
+#     -> Feature Flags
+#     -> Service Accounts
+#     -> Audit
+#
+#   Product launch
+#     WorkWell Finance
+#       -> product login
+#       -> eligible tenant picker
+#       -> select/switch tenant
+#       -> exchange selectionCode
+#       -> navigate to WorkWell with final tenant-bound token
+#
+#     MedPure
+#       -> same WORKWELL_FINANCE application/client
+#       -> MedPure tenant selection
+#       -> final MedPure tenant-bound WorkWell Finance token
+#
+# Platform hierarchy inside WORKWELL_FINANCE:
+#   WorkWell parent organization
+#     -> Eutopia Search tenant/company
+#     -> Patrick Morgan tenant/company
+#   MedPure tenant/company
+#
+# NEVER
+#   - use a Control token as a WorkWell Finance data token
+#   - change local CompId to switch Central tenants
+#   - allow one tenant-bound token to read another WorkWell company
+###############################################################################

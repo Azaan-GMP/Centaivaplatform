@@ -1,0 +1,3 @@
+<app-no-internet-screen *ngIf="!(online$ | async)"></app-no-internet-screen>
+<router-outlet *ngIf="online$ | async"></router-outlet>
+

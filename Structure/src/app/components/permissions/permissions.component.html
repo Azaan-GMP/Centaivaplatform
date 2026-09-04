@@ -1,0 +1,236 @@
+<div class="space-y-2.5 pb-2 animate-fadeIn">
+
+  <!-- Top Page Title & Stats Bar -->
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+    <div>
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg sm:text-xl font-extrabold tracking-tight text-white font-display">
+          Permissions Registry
+        </h1>
+        <span
+          class="px-2 py-0.5 text-[10px] font-bold font-mono rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm">
+          {{ filteredPermissions().length }} Scoped Capabilities
+        </span>
+      </div>
+      <p class="text-[11px] text-slate-400 font-mono mt-0.5">
+        Granular Authorization Tokens &bull; Domain Capabilities &bull; OpenAPI v1 Endpoint Enforcement
+      </p>
+    </div>
+  </div>
+
+  <!-- Filter, Search & Controls Bar -->
+  <div
+    class="relative z-30 p-2 rounded-2xl perm-glass-bar flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-lg">
+
+    <!-- Real-time Search Input -->
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-500">
+        <app-icon name="search" size="13"></app-icon>
+      </div>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+        placeholder="Search by permission name, key identifier, or description..."
+        class="w-full pl-8 pr-7 py-1.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00D4FF] transition-all font-medium" />
+      <button *ngIf="searchQuery" type="button" (click)="clearSearch()"
+        class="absolute inset-y-0 right-0 pr-2.5 flex items-center text-slate-400 hover:text-white cursor-pointer text-sm">
+        &times;
+      </button>
+    </div>
+
+    <!-- Right Controls: Module Filter + Sort Filter + Refresh -->
+    <div class="flex items-center gap-2 flex-wrap">
+
+      <!-- Module Filter -->
+      <div class="w-48">
+        <app-custom-select [options]="moduleOptions" [value]="moduleFilter"
+          (valueChange)="onModuleChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Sort Filter -->
+      <div class="w-44">
+        <app-custom-select [options]="sortOptions" [value]="sortBy"
+          (valueChange)="onSortChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Live Refresh Button -->
+      <button type="button" (click)="loadPermissions()" [disabled]="isLoading()"
+        class="p-1.5 bg-[#18181c] border border-[#27272a] rounded-xl text-slate-400 hover:text-[#00D4FF] hover:border-[#00D4FF]/40 transition-all cursor-pointer disabled:opacity-50"
+        title="Sync live records">
+        <app-icon name="refresh" size="13" [class.animate-spin]="isLoading()"></app-icon>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="p-8 text-center space-y-2">
+    <div class="w-8 h-8 border-2 border-[#00D4FF] border-t-transparent rounded-full animate-spin mx-auto"></div>
+    <p class="text-xs text-slate-400 font-mono">Loading permission capabilities...</p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- TABLE VIEW                                                                -->
+  <!-- ========================================================================= -->
+  <div *ngIf="!isLoading()" class="space-y-2 animate-fadeIn">
+    <div class="rounded-2xl border border-[#232328] bg-[#101013] overflow-hidden shadow-xl perm-table-wrapper">
+      <table class="w-full text-left text-xs text-slate-300 font-sans border-collapse">
+
+        <!-- Table Header -->
+        <thead
+          class="bg-[#18181c] border-b border-[#232328] text-[10px] font-mono uppercase tracking-wider text-slate-400">
+          <tr>
+            <th class="py-2.5 px-3.5 font-bold">Permission Capability (Display Name)</th>
+            <th class="py-2.5 px-3 font-bold">Key Identifier</th>
+            <th class="py-2.5 px-3 font-bold">Functional Domain</th>
+            <th class="py-2.5 px-3 font-bold">Security Scope Description</th>
+            <th class="py-2.5 px-3.5 font-bold text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <!-- Table Rows -->
+        <tbody class="divide-y divide-[#232328]">
+
+          <tr *ngFor="let perm of paginatedPermissions()" class="transition-colors group hover:bg-[#18181c] perm-table-row">
+            
+            <!-- Clear Display Name & Icon -->
+            <td class="py-2 px-3.5">
+              <div class="flex items-center gap-2.5">
+                <div
+                  class="w-7 h-7 rounded-lg bg-[#18181c] border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shrink-0 font-bold shadow-inner">
+                  <app-icon name="lock" size="13"></app-icon>
+                </div>
+                <div class="min-w-0">
+                  <span
+                    class="font-bold text-white group-hover:text-[#00D4FF] transition-colors text-xs truncate block leading-snug">
+                    {{ perm.name }}
+                  </span>
+                  <span class="text-[10px] text-slate-400 block font-mono">
+                    Token ID: {{ perm.id }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Identifier Key -->
+            <td class="py-2 px-3 font-mono">
+              <span
+                class="px-2 py-0.5 bg-[#18181c] border border-[#27272a] rounded text-[#00D4FF] font-bold text-[10px]">
+                {{ perm.key }}
+              </span>
+            </td>
+
+            <!-- Functional Domain -->
+            <td class="py-2 px-3">
+              <span class="px-2 py-0.5 text-[9px] font-semibold rounded font-mono bg-sky-500/10 text-sky-300 border border-sky-500/30">
+                {{ perm.module }}
+              </span>
+            </td>
+
+            <!-- Description -->
+            <td class="py-2 px-3 max-w-md">
+              <p class="text-xs text-slate-300 leading-relaxed truncate group-hover:whitespace-normal group-hover:line-clamp-2">
+                {{ perm.description }}
+              </p>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-2 px-3.5 text-right">
+              <button
+                type="button"
+                (click)="viewPermission(perm)"
+                class="px-2.5 py-0.5 text-[11px] font-bold text-[#00D4FF] hover:text-white hover:bg-[#00D4FF]/20 border border-[#00D4FF]/40 rounded-lg transition-all cursor-pointer"
+              >
+                Inspect &rarr;
+              </button>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="paginatedPermissions().length === 0">
+            <td colspan="5" class="text-center py-6 text-slate-400 font-mono">
+              <p class="text-xs font-bold text-slate-300">No matching permissions found</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">Try adjusting your search query or module filter.</p>
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- Table Pagination Footer -->
+    <div
+      class="px-3.5 py-1.5 border border-[#232328] rounded-xl bg-[#101013] flex items-center justify-between text-xs text-slate-400 font-mono perm-glass-bar">
+      <span class="text-[11px]">
+        Showing <strong class="text-slate-200">{{ paginatedPermissions().length }}</strong> of <strong
+          class="text-slate-200">{{ filteredPermissions().length }}</strong> capabilities
+      </span>
+      <div class="flex items-center gap-1.5">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-2.5 py-0.5 text-xs rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Previous
+        </button>
+        <span class="px-1.5 text-xs font-bold text-slate-300">{{ currentPage() }} / {{ totalPages() || 1 }}</span>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-2.5 py-0.5 text-xs rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- PERMISSION DETAILS MODAL                                                  -->
+  <!-- ========================================================================= -->
+  <div *ngIf="selectedPermission()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+    <div
+      class="w-full max-w-lg rounded-2xl perm-modal-card p-5 shadow-2xl space-y-4 border border-[#232328] bg-[#101013] overflow-hidden flex flex-col">
+
+      <div class="flex items-start justify-between border-b border-[#232328] pb-3 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div
+            class="w-9 h-9 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold shadow-lg">
+            <app-icon name="lock" size="16"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-white font-display">{{ selectedPermission()?.name }}</h2>
+            <p class="text-xs text-[#00D4FF] font-mono mt-0.5">{{ selectedPermission()?.key }}</p>
+          </div>
+        </div>
+        <button type="button" (click)="closePermissionDetails()"
+          class="w-7 h-7 rounded-lg bg-[#18181c] text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+          &times;
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs font-mono">
+        <div class="grid grid-cols-2 gap-2.5">
+          <div class="p-2.5 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Functional Domain</span>
+            <span class="text-white font-bold text-xs">{{ selectedPermission()?.module }}</span>
+          </div>
+          <div class="p-2.5 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[9px] text-slate-500 uppercase font-bold block mb-0.5">Token ID</span>
+            <span class="text-[#00D4FF] font-bold text-xs">{{ selectedPermission()?.id }}</span>
+          </div>
+        </div>
+
+        <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328] space-y-1 font-sans">
+          <span class="text-[9px] font-bold uppercase tracking-wider text-slate-500 font-mono block">Security Scope Description</span>
+          <p class="text-xs text-slate-200 leading-relaxed">{{ selectedPermission()?.description }}</p>
+        </div>
+      </div>
+
+      <div class="pt-3 border-t border-[#232328] flex items-center justify-end shrink-0">
+        <button type="button" (click)="closePermissionDetails()"
+          class="px-4 py-1.5 text-xs font-bold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl cursor-pointer transition-colors shadow-md">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+</div>

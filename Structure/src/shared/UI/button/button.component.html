@@ -1,0 +1,17 @@
+<button [attr.type]="type" [disabled]="disabled"
+[class.w-full]="fullWidth"
+  class="inline-flex w-auto items-center justify-center gap-2 rounded-md px-4 h-9 text-sm font-medium transition"
+  [ngClass]="[
+    variant === 'primary'
+      ? 'bg-primary text-white hover:opacity-90'
+      : '',
+    variant === 'secondary'
+      ? 'bg-secondary text-primary hover:bg-panelColor'
+      : '',
+    variant === 'light'
+      ? 'bg-white border border-primary text-slate-900 hover:bg-primary/5'
+      : '',
+    disabled ? 'opacity-50 cursor-not-allowed pointer-events-none' : ''
+  ]">
+  <ng-content></ng-content>
+</button>

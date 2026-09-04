@@ -1,0 +1,76 @@
+/* ============================================================
+   EXECUTIVE MODAL & DIALOG POLISH SYSTEM
+   ============================================================ */
+
+.dialog-header {
+  background: rgba(24, 24, 28, 0.98);
+  color: #fafafa;
+  border-bottom: 1px solid #27272a;
+  border-radius: 20px 20px 0 0;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2.5px;
+    background: linear-gradient(90deg, #10b981, #14b8a6, #10b981);
+    border-radius: 20px 20px 0 0;
+  }
+}
+
+.dialog-header h2,
+.dialog-header h3 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+}
+
+.dialog-header p {
+  font-size: 0.875rem;
+  color: #a1a1aa;
+  margin-top: 0.25rem;
+}
+
+.dialog-close-button {
+  background-color: #18181c;
+  border: 1px solid #27272a;
+  height: 32px;
+  width: 32px;
+  color: #a1a1aa !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    color: #ffffff !important;
+    background-color: #27272a;
+    border-color: #3f3f46;
+  }
+}
+
+/* Dialog Footer */
+.dialog-footer {
+  margin-top: 1.25rem;
+  border-top: 1px solid #27272a;
+  background-color: rgba(18, 18, 21, 0.98);
+  border-radius: 0 0 20px 20px;
+  padding: 1.25rem 1.5rem;
+}
+
+.dialog-footer-inner,
+[dialog-footer] {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.875rem;
+}
+

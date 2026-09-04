@@ -1,0 +1,172 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Glass Card Shell */
+.login-card-shell {
+  background: rgba(16, 16, 19, 0.96);
+  backdrop-filter: blur(32px);
+  -webkit-backdrop-filter: blur(32px);
+  border: 1px solid #27272a;
+  box-shadow: 0 30px 90px -15px rgba(0, 0, 0, 0.98),
+              0 0 40px -10px rgba(0, 212, 255, 0.15),
+              inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* Left Brand Panel */
+.left-brand-panel {
+  background: linear-gradient(145deg, rgba(12, 12, 14, 0.98) 0%, rgba(16, 16, 19, 0.94) 50%, rgba(12, 12, 14, 0.98) 100%);
+}
+
+/* Exact Input Wrapper Styling - No Overlap Guaranteed */
+.login-input-group {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.login-input-field {
+  width: 100% !important;
+  height: 50px !important;
+  padding-left: 50px !important;
+  padding-right: 18px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  background-color: #18181b !important;
+  border: 1px solid #27272a !important;
+  border-radius: 14px !important;
+  color: #ffffff !important;
+  font-size: 14.5px !important;
+  font-weight: 500 !important;
+  line-height: 50px !important;
+  outline: none !important;
+  transition: all 0.2s ease !important;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4) !important;
+
+  &::placeholder {
+    color: #71717a !important;
+    font-weight: 400 !important;
+  }
+
+  &:hover {
+    border-color: #3f3f46 !important;
+  }
+
+  &:focus {
+    border-color: #00D4FF !important;
+    box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.25), inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 0 20px rgba(0, 212, 255, 0.15) !important;
+  }
+
+  &.is-invalid {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+  }
+}
+
+.login-password-field {
+  padding-right: 50px !important;
+}
+
+.login-input-icon {
+  position: absolute;
+  left: 17px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: #71717a;
+  pointer-events: none;
+  transition: color 0.2s ease;
+  z-index: 2;
+}
+
+.login-input-group:focus-within .login-input-icon {
+  color: #00D4FF;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  color: #71717a;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  z-index: 2;
+}
+
+.password-toggle-btn:hover {
+  color: #00D4FF;
+  background: rgba(0, 212, 255, 0.1);
+}
+
+/* Chrome/Safari Autofill Dark Theme Override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 50px #18181b inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #00D4FF !important;
+  border-radius: 14px !important;
+}
+
+/* Feature Badge Glass Cards */
+.feature-glass-chip {
+  background: #141417;
+  border: 1px solid #27272a;
+  transition: all 0.25s ease;
+
+  &:hover {
+    border-color: rgba(0, 212, 255, 0.4);
+    background: #1a1a1f;
+    transform: translateY(-1px);
+  }
+}
+
+/* Submit Action Button */
+.btn-primary-action {
+  background: #00D4FF !important;
+  color: #000000 !important;
+  box-shadow: 0 8px 25px -4px rgba(0, 212, 255, 0.5), 0 0 15px rgba(0, 212, 255, 0.25) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover:not(:disabled) {
+    background: #38bdf8 !important;
+    box-shadow: 0 12px 35px -4px rgba(0, 212, 255, 0.7), 0 0 25px rgba(0, 212, 255, 0.4) !important;
+    transform: translateY(-1px);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0px) scale(0.99);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+.animate-fadeIn {
+  animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

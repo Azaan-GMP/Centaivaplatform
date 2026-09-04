@@ -1,0 +1,99 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.org-kpi-card {
+  background: #121215;
+  border: 1px solid #27272a;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+}
+
+.org-table-wrapper {
+  background: #121215;
+  border: 1px solid #27272a;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+}
+
+.org-table-row {
+  border-bottom: 1px solid #27272a;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #18181c;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.org-card {
+  background: #121215;
+  border: 1px solid #27272a;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    border-color: rgba(16, 185, 129, 0.45);
+    background: #18181c;
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.85), 0 0 20px rgba(16, 185, 129, 0.1);
+  }
+}
+
+.org-glass-bar {
+  background: #121215;
+  border: 1px solid #27272a;
+}
+
+.org-modal-card {
+  background: #121215;
+  border: 1px solid #27272a;
+  box-shadow: 0 25px 70px -10px rgba(0, 0, 0, 0.95), 0 0 30px rgba(16, 185, 129, 0.08);
+}
+
+.tenant-list-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #27272a #121215;
+
+  &::-webkit-scrollbar {
+    width: 5px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #121215;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: #27272a;
+    border-radius: 4px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: #10b981;
+  }
+}
+
+/* Light Theme Overrides */
+:host-context(html.light),
+:host-context(html.theme-light),
+:host-context(html[data-theme='light']) {
+  .org-kpi-card,
+  .org-table-wrapper,
+  .org-card,
+  .org-glass-bar,
+  .org-modal-card {
+    background: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .org-table-row:hover {
+    background: #f1f5f9 !important;
+  }
+
+  .org-card:hover {
+    background: #ffffff !important;
+    border-color: #059669 !important;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08) !important;
+  }
+}

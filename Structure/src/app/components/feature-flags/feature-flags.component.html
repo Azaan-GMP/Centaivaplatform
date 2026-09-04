@@ -1,0 +1,39 @@
+<div class="space-y-6 animate-fadeIn">
+  <div>
+    <h1 class="text-xl font-bold text-white font-display">Feature Flags Management</h1>
+    <p class="text-xs text-slate-400 mt-1">Configure runtime capability toggles across global, organization, and tenant scopes</p>
+  </div>
+
+  <div class="rounded-2xl border border-[#232328] bg-[#101013] overflow-hidden shadow-xl shadow-black/40">
+    <div class="divide-y divide-[#232328]">
+      <div *ngFor="let flag of featureFlags()" class="p-5 flex items-center justify-between gap-4 hover:bg-[#18181c]/60 transition-colors">
+        <div class="space-y-1 max-w-2xl">
+          <div class="flex items-center gap-2.5">
+            <h2 class="text-sm font-bold text-white">{{ flag.name }}</h2>
+            <code class="text-[10px] font-mono font-bold text-[#00D4FF] bg-[#00D4FF]/10 border border-[#00D4FF]/30 px-2 py-0.5 rounded">
+              {{ flag.key }}
+            </code>
+            <span class="text-[9px] font-mono text-slate-400 uppercase bg-[#18181c] border border-[#27272a] px-1.5 py-0.5 rounded">
+              {{ flag.scope }}
+            </span>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">{{ flag.description }}</p>
+        </div>
+
+        <button
+          type="button"
+          (click)="toggleFlag(flag)"
+          class="relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+          [ngClass]="flag.isEnabled ? 'bg-[#00D4FF]' : 'bg-slate-800'"
+        >
+          <span
+            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+            [ngClass]="flag.isEnabled ? 'translate-x-5' : 'translate-x-0'"
+          ></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+

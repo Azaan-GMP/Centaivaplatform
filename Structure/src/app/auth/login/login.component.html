@@ -1,0 +1,242 @@
+<div
+  class="min-h-screen w-full flex items-center justify-center relative overflow-hidden bg-[#000000] p-4 sm:p-6 lg:p-8 select-none">
+
+  <!-- Atmosphere Background Image -->
+  <div class="absolute inset-0 z-0 pointer-events-none">
+    <img src="assets/images/centaiva-login-bg.jpg" alt="Atmosphere"
+      class="w-full h-full object-cover object-center filter brightness-90 contrast-125 scale-105" />
+    <div class="absolute inset-0 bg-[#000000]/80 backdrop-blur-[3px]"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#000000_85%)]"></div>
+  </div>
+
+  <!-- Ambient Glow Effects (Electric Sky Blue #00D4FF) -->
+  <div
+    class="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#00D4FF]/10 rounded-full blur-[160px] pointer-events-none">
+  </div>
+  <div
+    class="absolute bottom-1/4 right-1/4 translate-x-1/2 translate-y-1/2 w-[600px] h-[600px] bg-[#00D4FF]/05 rounded-full blur-[160px] pointer-events-none">
+  </div>
+
+  <!-- Main Login Card Container -->
+  <div
+    class="relative z-10 w-full max-w-[1080px] min-h-[620px] rounded-3xl login-card-shell overflow-hidden grid grid-cols-1 lg:grid-cols-12 shadow-2xl">
+
+    <!-- LEFT PANEL: Brand Narrative & High-Tech Showcase (5 cols on lg) -->
+    <div
+      class="lg:col-span-5 relative hidden lg:flex flex-col justify-between p-8 xl:p-10 left-brand-panel border-r border-[#232328] overflow-hidden">
+
+      <!-- AI Core Background Layer -->
+      <div class="absolute inset-0 z-0 pointer-events-none">
+        <img src="assets/images/centaiva-ai-core.jpg" alt="AI Core"
+          class="w-full h-full object-cover object-center opacity-35 mix-blend-screen filter saturate-125" />
+        <div class="absolute inset-0 bg-gradient-to-t from-[#101013] via-[#101013]/70 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-[#101013]/40 to-[#101013]"></div>
+      </div>
+
+      <!-- Top Header: Logo + Version Tag -->
+      <div class="relative z-10 flex items-center justify-between gap-3 w-full">
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="relative w-8 h-8 flex items-center justify-center shrink-0">
+            <div class="absolute inset-0 bg-[#00D4FF]/30 rounded-full blur-md animate-pulse"></div>
+            <img src="assets/images/centaiva-icon.png" alt="Centaiva Star"
+              style="width: 28px; height: 28px; object-fit: contain;"
+              class="relative drop-shadow-[0_0_12px_rgba(0,212,255,0.85)]" />
+          </div>
+          <img src="assets/images/centaiva-wordmark.png" alt="Centaiva"
+            style="height: 20px; width: auto; max-width: 120px; object-fit: contain;"
+            class="filter brightness-125 drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" />
+        </div>
+        <div
+          class="flex items-center gap-1.5 px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase text-[#00D4FF] bg-[#00D4FF]/10 border border-[#00D4FF]/30 rounded-full font-mono shrink-0 shadow-sm">
+          <span class="w-1.5 h-1.5 rounded-full bg-[#00D4FF]"></span>
+          <span>Platform OS</span>
+        </div>
+      </div>
+
+      <!-- Center Narrative -->
+      <div class="relative z-10 my-auto py-6 space-y-4">
+        <div
+          class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#00D4FF]/10 border border-[#00D4FF]/30 backdrop-blur-md">
+          <span class="w-2 h-2 rounded-full bg-[#00D4FF] animate-ping"></span>
+          <span class="text-xs font-bold text-[#00D4FF] tracking-wide">Intelligent AI Governance</span>
+        </div>
+
+        <h1 class="text-2xl xl:text-3xl font-extrabold text-white tracking-tight leading-snug font-display">
+          Centralized AI Control &amp; Multi-Tenant Fabric
+        </h1>
+
+        <p class="text-sm text-slate-300 leading-relaxed font-sans">
+          Orchestrate enterprise organizations, WorkWell Finance hierarchies, and central identity security from a
+          single unified control plane.
+        </p>
+
+        <!-- Feature Chips Grid -->
+        <div class="grid grid-cols-2 gap-3 pt-2">
+          <div class="p-3 rounded-2xl feature-glass-chip flex items-center gap-2.5 text-slate-200">
+            <div
+              class="w-8 h-8 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center shrink-0">
+              <app-icon name="shield" size="16" class="text-[#00D4FF]"></app-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white truncate">Zero-Trust RBAC</div>
+              <div class="text-[10px] text-slate-400 truncate">Enterprise Security</div>
+            </div>
+          </div>
+
+          <div class="p-3 rounded-2xl feature-glass-chip flex items-center gap-2.5 text-slate-200">
+            <div
+              class="w-8 h-8 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center shrink-0">
+              <app-icon name="building" size="16" class="text-[#00D4FF]"></app-icon>
+            </div>
+            <div class="min-w-0">
+              <div class="text-xs font-bold text-white truncate">WorkWell CompId</div>
+              <div class="text-[10px] text-slate-400 truncate">Hierarchy Bridge</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom Info Strip -->
+      <div
+        class="relative z-10 pt-4 border-t border-[#232328] flex items-center justify-between text-xs text-slate-400 font-mono">
+        <span class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-[#00D4FF] animate-pulse"></span>
+          <span class="text-slate-300 font-medium">Central Bridge Active</span>
+        </span>
+        <span class="text-[#00D4FF] font-bold tracking-wider">99.99% Uptime</span>
+      </div>
+
+    </div>
+
+    <!-- RIGHT PANEL: Authentication Form (7 cols on lg) -->
+    <div class="lg:col-span-7 flex flex-col justify-center p-8 sm:p-10 xl:p-12 relative bg-[#101013]">
+
+      <!-- Top Brand Header on Mobile/Tablet -->
+      <div class="flex lg:hidden items-center justify-center gap-3 mb-6">
+        <img src="assets/images/centaiva-icon.png" alt="Centaiva"
+          style="width: 32px; height: 32px; object-fit: contain;" class="drop-shadow-[0_0_10px_rgba(0,212,255,0.7)]" />
+        <img src="assets/images/centaiva-wordmark.png" alt="Centaiva"
+          style="height: 22px; width: auto; max-width: 130px; object-fit: contain;" class="filter brightness-120" />
+      </div>
+
+      <!-- Welcome Header -->
+      <div class="mb-7 flex items-center gap-3.5">
+        <div
+          class="w-12 h-12 rounded-2xl bg-[#18181b] border border-[#00D4FF]/35 flex items-center justify-center shadow-lg shadow-black/80 shrink-0">
+          <img src="assets/images/centaiva-icon.png" alt="Centaiva"
+            style="width: 26px; height: 26px; object-fit: contain;"
+            class="drop-shadow-[0_0_10px_rgba(0,212,255,0.85)]" />
+        </div>
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-display">Welcome Back</h2>
+          <p class="text-xs sm:text-sm text-slate-400 font-sans mt-0.5">Sign in to your Centaiva central administrator
+            console</p>
+        </div>
+      </div>
+
+      <!-- Error Alert -->
+      <div *ngIf="errorMessage()"
+        class="mb-5 p-3.5 bg-red-950/70 border border-red-800/80 rounded-2xl flex items-start gap-3 text-red-200 text-xs sm:text-sm animate-fadeIn">
+        <app-icon name="alert" size="17" class="text-red-400 shrink-0 mt-0.5"></app-icon>
+        <span class="flex-1 leading-relaxed">{{ errorMessage() }}</span>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-4.5" novalidate>
+
+        <!-- Email Input -->
+        <div class="space-y-1.5 text-left">
+          <label for="email" class="block text-xs sm:text-sm font-semibold text-slate-200 tracking-wide">
+            Email Address
+          </label>
+          <div class="login-input-group">
+            <div class="login-input-icon">
+              <app-icon name="user" size="18"></app-icon>
+            </div>
+            <input id="email" type="email" formControlName="email" autocomplete="email"
+              placeholder="talha.hassan@centaiva.com"
+              [class.is-invalid]="email.invalid && (email.dirty || email.touched)" class="login-input-field" />
+          </div>
+          <div *ngIf="email.invalid && (email.dirty || email.touched)" class="text-xs text-red-400 pl-1 pt-0.5">
+            <span *ngIf="email.errors?.['required']">Email address is required.</span>
+            <span *ngIf="email.errors?.['email']">Please enter a valid email address.</span>
+          </div>
+        </div>
+
+        <!-- Password Input -->
+        <div class="space-y-1.5 text-left">
+          <div class="flex items-center justify-between">
+            <label for="password" class="block text-xs sm:text-sm font-semibold text-slate-200 tracking-wide">
+              Password
+            </label>
+          </div>
+          <div class="login-input-group">
+            <div class="login-input-icon">
+              <app-icon name="lock" size="18"></app-icon>
+            </div>
+            <input id="password" [type]="showPassword() ? 'text' : 'password'" formControlName="password"
+              autocomplete="current-password" placeholder="••••••••••••"
+              [class.is-invalid]="password.invalid && (password.dirty || password.touched)"
+              class="login-input-field login-password-field" />
+            <button type="button" (click)="togglePasswordVisibility()" class="password-toggle-btn"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'">
+              <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="17"></app-icon>
+            </button>
+          </div>
+          <div *ngIf="password.invalid && (password.dirty || password.touched)"
+            class="text-xs text-red-400 pl-1 pt-0.5">
+            <span *ngIf="password.errors?.['required']">Password is required.</span>
+            <span *ngIf="password.errors?.['minlength']">Password must be at least 6 characters.</span>
+          </div>
+        </div>
+
+        <!-- Remember Me & Quick Credentials Helper -->
+        <div class="flex items-center justify-between pt-1">
+          <label class="flex items-center gap-2 cursor-pointer select-none">
+            <input type="checkbox"
+              class="w-4 h-4 rounded bg-[#18181b] border-[#27272a] text-[#00D4FF] focus:ring-0 cursor-pointer accent-[#00D4FF]" />
+            <span class="text-xs sm:text-sm text-slate-400 font-medium">Remember credentials</span>
+          </label>
+
+          <button type="button" (click)="fillQaCredentials()"
+            class="text-xs sm:text-sm font-bold text-[#00D4FF] hover:text-sky-300 hover:underline transition-colors focus:outline-none cursor-pointer">
+            Fill Platform Owner Credentials
+          </button>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="pt-2">
+          <button type="submit" [disabled]="isSubmitting()"
+            class="w-full relative group overflow-hidden py-3.5 px-5 rounded-2xl font-extrabold text-xs sm:text-sm uppercase tracking-widest text-[#000000] btn-primary-action focus:outline-none focus:ring-4 focus:ring-[#00D4FF]/40 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer shadow-lg">
+            <div class="flex items-center justify-center gap-2.5">
+              <span *ngIf="!isSubmitting()">Sign In to Platform</span>
+              <span *ngIf="isSubmitting()">Authenticating Scope...</span>
+
+              <svg *ngIf="isSubmitting()" class="animate-spin h-4 w-4 text-[#000000]" viewBox="0 0 24 24" fill="none">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                </path>
+              </svg>
+              <app-icon *ngIf="!isSubmitting()" name="arrowRight" size="16"
+                class="transition-transform group-hover:translate-x-1 text-[#000000]"></app-icon>
+            </div>
+          </button>
+        </div>
+
+      </form>
+
+      <!-- Security Subtext -->
+      <div class="mt-7 pt-4 border-t border-[#232328] text-center">
+        <p class="text-xs text-slate-400 flex items-center justify-center gap-2 font-sans">
+          <app-icon name="shield" size="14" class="text-[#00D4FF]"></app-icon>
+          <span>Tenantless Platform Control &bull; Client: <code
+              class="text-slate-300 font-mono text-xs">centaiva-platform-web</code></span>
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>

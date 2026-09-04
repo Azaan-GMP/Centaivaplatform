@@ -1,0 +1,626 @@
+<div class="space-y-4 pb-6 animate-fadeIn">
+
+  <!-- Top Page Title & Stats Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white font-display">
+          Integration Providers
+        </h1>
+        <span
+          class="px-2.5 py-0.5 text-xs font-bold font-mono rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm">
+          {{ filteredProviders().length }} Total
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 font-mono mt-0.5">
+        Enterprise Webhooks &bull; System Bridges &bull; Identity Sync &amp; Financial Relays
+      </p>
+    </div>
+
+    <!-- Top Action Buttons -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <button type="button" (click)="openCreateModal()"
+        class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/20 transition-all active:scale-95 cursor-pointer">
+        <app-icon name="plus" size="14"></app-icon>
+        <span>New Integration Bridge</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Filter, Search & View Controls Bar -->
+  <div
+    class="relative z-30 p-3 rounded-2xl integ-glass-bar flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+
+    <!-- Real-time Search Input -->
+    <div class="relative flex-1 max-w-md">
+      <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+        <app-icon name="search" size="14"></app-icon>
+      </div>
+      <input type="text" [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+        placeholder="Search by provider name, key, ID, or type..."
+        class="w-full pl-9 pr-8 py-2 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#00D4FF] transition-all font-medium" />
+      <button *ngIf="searchQuery" type="button" (click)="clearSearch()"
+        class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-white cursor-pointer text-sm">
+        &times;
+      </button>
+    </div>
+
+    <!-- Right Controls: Status + Sort + View Toggle + Refresh -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+
+      <!-- Status Filter -->
+      <div class="w-36">
+        <app-custom-select [options]="statusOptions" [value]="statusFilter"
+          (valueChange)="onStatusChange($event)"></app-custom-select>
+      </div>
+
+      <!-- Sort Filter -->
+      <div class="w-40">
+        <app-custom-select [options]="sortOptions" [value]="sortBy"
+          (valueChange)="onSortChange($event)"></app-custom-select>
+      </div>
+
+      <!-- View Switcher (Table vs Grid) -->
+      <div class="flex items-center bg-[#18181c] border border-[#232328] rounded-xl p-0.5">
+        <button type="button" (click)="setViewMode('table')"
+          [ngClass]="viewMode() === 'table' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer" title="Table View">
+          <app-icon name="table" size="14"></app-icon>
+        </button>
+        <button type="button" (click)="setViewMode('grid')"
+          [ngClass]="viewMode() === 'grid' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white'"
+          class="p-1.5 rounded-lg transition-all cursor-pointer" title="Grid View">
+          <app-icon name="grid" size="14"></app-icon>
+        </button>
+      </div>
+
+      <!-- Live Refresh Button -->
+      <button type="button" (click)="loadData()" [disabled]="isLoading()"
+        class="p-2 bg-[#18181c] border border-[#27272a] rounded-xl text-slate-400 hover:text-[#00D4FF] hover:border-[#00D4FF]/40 transition-all cursor-pointer disabled:opacity-50"
+        title="Sync live records">
+        <app-icon name="refresh" size="14" [class.animate-spin]="isLoading()"></app-icon>
+      </button>
+
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading()" class="p-12 text-center space-y-3">
+    <div class="w-10 h-10 border-2 border-[#00D4FF] border-t-transparent rounded-full animate-spin mx-auto"></div>
+    <p class="text-xs text-slate-400 font-mono">Loading integration providers &amp; connectors...</p>
+  </div>
+
+  <!-- VIEW 1: TABLE VIEW (DEFAULT) -->
+  <div *ngIf="!isLoading() && viewMode() === 'table'" class="space-y-3">
+    <div class="rounded-2xl border border-[#232328] bg-[#101013] overflow-hidden shadow-2xl integ-table-wrapper">
+      <table class="w-full text-left text-xs text-slate-300 font-sans border-collapse">
+
+        <!-- Table Header -->
+        <thead
+          class="bg-[#18181c] border-b border-[#232328] text-[11px] font-mono uppercase tracking-wider text-slate-400">
+          <tr>
+            <th class="py-3.5 px-4 font-bold">Connector Provider</th>
+            <th class="py-3.5 px-4 font-bold">Key Identifier</th>
+            <th class="py-3.5 px-4 font-bold">Bridge Type</th>
+            <th class="py-3.5 px-4 font-bold">Status</th>
+            <th class="py-3.5 px-4 font-bold text-right">Actions</th>
+          </tr>
+        </thead>
+
+        <!-- Table Rows -->
+        <tbody class="divide-y divide-[#232328]">
+
+          <tr *ngFor="let prov of paginatedProviders()" class="transition-colors group hover:bg-[#18181c] integ-table-row">
+            <!-- Provider Name & Icon -->
+            <td class="py-3 px-4">
+              <div class="flex items-center gap-3">
+                <div
+                  class="w-8 h-8 rounded-lg bg-[#18181c] border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shrink-0 font-mono font-bold text-xs shadow-inner">
+                  {{ prov.name ? prov.name.substring(0, 2).toUpperCase() : 'IN' }}
+                </div>
+                <div class="min-w-0">
+                  <span
+                    class="font-bold text-white group-hover:text-[#00D4FF] transition-colors text-xs truncate block">
+                    {{ prov.name }}
+                  </span>
+                  <span class="text-[11px] text-slate-400 block truncate" *ngIf="prov.description">
+                    {{ prov.description }}
+                  </span>
+                </div>
+              </div>
+            </td>
+
+            <!-- Key Identifier -->
+            <td class="py-3 px-4 font-mono">
+              <button
+                type="button"
+                (click)="copyKey(prov.key, $event)"
+                title="Click to copy Key"
+                class="px-2 py-0.5 bg-[#18181c] hover:bg-[#00D4FF]/20 border border-[#27272a] hover:border-[#00D4FF]/40 rounded text-[#00D4FF] font-bold text-[11px] transition-colors inline-flex items-center gap-1 cursor-pointer">
+                <span>{{ prov.key || 'N/A' }}</span>
+                <app-icon name="clipboard" size="10" class="opacity-60"></app-icon>
+              </button>
+            </td>
+
+            <!-- Bridge Type -->
+            <td class="py-3 px-4">
+              <span class="px-2 py-0.5 text-[10px] font-semibold rounded font-mono bg-sky-500/10 text-[#00D4FF] border border-[#00D4FF]/30">
+                {{ prov.type || 'SYSTEM_CONNECTOR' }}
+              </span>
+            </td>
+
+            <!-- Status -->
+            <td class="py-3 px-4">
+              <span class="px-2.5 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+                [ngClass]="formatStatus(prov.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : (formatStatus(prov.status) === 'BETA' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]')">
+                {{ formatStatus(prov.status) }}
+              </span>
+            </td>
+
+            <!-- Actions -->
+            <td class="py-3 px-4 text-right">
+              <div class="flex items-center justify-end gap-1.5">
+                <button type="button" (click)="testBridge(prov, $event)"
+                  class="px-2.5 py-1 text-xs font-semibold text-slate-300 hover:text-[#00D4FF] bg-[#18181c] hover:bg-[#00D4FF]/10 border border-[#27272a] hover:border-[#00D4FF]/30 rounded-lg transition-all cursor-pointer flex items-center gap-1"
+                  title="Test & Sync Bridge">
+                  <app-icon name="refresh" size="11" [class.animate-spin]="isTesting()"></app-icon>
+                  <span>Sync</span>
+                </button>
+                <button type="button" (click)="openEditModal(prov, $event)"
+                  class="p-1.5 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 border border-transparent hover:border-[#00D4FF]/30 rounded-lg transition-all cursor-pointer"
+                  title="Edit provider">
+                  <app-icon name="edit" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="confirmDelete(prov, $event)"
+                  class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-800/30 rounded-lg transition-all cursor-pointer"
+                  title="Delete provider">
+                  <app-icon name="trash" size="14"></app-icon>
+                </button>
+                <button type="button" (click)="viewDetails(prov)"
+                  class="px-3 py-1 text-xs font-bold text-[#00D4FF] hover:text-white hover:bg-[#00D4FF]/20 border border-[#00D4FF]/40 rounded-lg transition-all cursor-pointer">
+                  Details &rarr;
+                </button>
+              </div>
+            </td>
+
+          </tr>
+
+          <!-- Empty State -->
+          <tr *ngIf="paginatedProviders().length === 0">
+            <td colspan="5" class="text-center py-10 text-slate-400 font-mono">
+              <p class="text-sm font-bold text-slate-300">No integration providers found</p>
+              <p class="text-xs text-slate-500 mt-1">Try adjusting your search query or status filter.</p>
+            </td>
+          </tr>
+
+        </tbody>
+
+      </table>
+    </div>
+
+    <!-- Table Pagination Footer -->
+    <div
+      class="px-4 py-3 border border-[#232328] rounded-2xl bg-[#101013] flex items-center justify-between text-xs text-slate-400 font-mono integ-glass-bar">
+      <span>
+        Showing <strong class="text-slate-200">{{ paginatedProviders().length }}</strong> of <strong
+          class="text-slate-200">{{ filteredProviders().length }}</strong> providers
+      </span>
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Previous
+        </button>
+        <span class="px-2 font-bold text-slate-300">{{ currentPage() }} / {{ totalPages() || 1 }}</span>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer transition-all">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- VIEW 2: GRID VIEW -->
+  <div *ngIf="!isLoading() && viewMode() === 'grid'" class="space-y-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
+      <div *ngFor="let prov of paginatedProviders()"
+        class="group relative p-4 rounded-2xl border border-[#232328] bg-[#101013] hover:bg-[#18181c] hover:border-[#00D4FF]/40 transition-all duration-200 shadow-xl flex flex-col justify-between integ-card">
+        <div>
+          <!-- Header with Code & Status -->
+          <div class="flex items-center justify-between gap-2 mb-3">
+            <div
+              class="w-9 h-9 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold text-xs font-mono shadow-md">
+              {{ prov.name ? prov.name.substring(0, 2).toUpperCase() : 'IN' }}
+            </div>
+            <span class="px-2 py-0.5 text-[9px] font-bold uppercase rounded-md font-mono"
+              [ngClass]="formatStatus(prov.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : (formatStatus(prov.status) === 'BETA' ? 'bg-amber-500/15 text-amber-400 border border-amber-500/40' : 'bg-[#18181c] text-slate-400 border border-[#27272a]')">
+              {{ formatStatus(prov.status) }}
+            </span>
+          </div>
+
+          <!-- Name & Unique Code -->
+          <div class="space-y-1">
+            <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors line-clamp-1">
+              {{ prov.name }}
+            </h3>
+            <p class="text-[10px] font-mono text-[#00D4FF] font-semibold">{{ prov.key || 'N/A' }}</p>
+            <p class="text-xs text-slate-400 line-clamp-2 mt-1">{{ prov.description || 'Enterprise integration bridge connector.' }}</p>
+          </div>
+        </div>
+
+        <div class="mt-3.5 pt-2.5 border-t border-[#232328] flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-xs text-slate-400 font-mono truncate max-w-[130px]">
+            <app-icon name="refresh" size="13" class="text-[#00D4FF] shrink-0"></app-icon>
+            <span class="truncate text-slate-300 text-[11px]">{{ prov.type }}</span>
+          </div>
+
+          <div class="flex items-center gap-1.5">
+            <button type="button" (click)="testBridge(prov, $event)"
+              class="p-1 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-colors cursor-pointer"
+              title="Verify & Sync">
+              <app-icon name="refresh" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="openEditModal(prov, $event)"
+              class="p-1 text-slate-400 hover:text-[#00D4FF] hover:bg-[#00D4FF]/10 rounded transition-colors cursor-pointer"
+              title="Edit provider">
+              <app-icon name="edit" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="confirmDelete(prov, $event)"
+              class="p-1 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+              title="Delete provider">
+              <app-icon name="trash" size="13"></app-icon>
+            </button>
+            <button type="button" (click)="viewDetails(prov)"
+              class="text-xs font-bold text-[#00D4FF] hover:text-sky-300 flex items-center gap-1 cursor-pointer transition-colors">
+              <span>Details</span>
+              <app-icon name="arrowRight" size="11"></app-icon>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grid Pagination Footer -->
+    <div class="p-3 rounded-2xl integ-glass-bar flex items-center justify-between text-xs text-slate-400 font-mono">
+      <span>Page {{ currentPage() }} of {{ totalPages() || 1 }}</span>
+      <div class="flex items-center gap-2">
+        <button type="button" (click)="setPage(currentPage() - 1)" [disabled]="currentPage() === 1"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Previous
+        </button>
+        <button type="button" (click)="setPage(currentPage() + 1)"
+          [disabled]="currentPage() === totalPages() || totalPages() === 0"
+          class="px-3 py-1 rounded-lg border border-[#232328] bg-[#18181c] text-slate-300 hover:text-white disabled:opacity-40 cursor-pointer">
+          Next
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTEGRATION DETAILS DRAWER -->
+  <div *ngIf="selectedProvider()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
+    <div
+      class="w-full max-w-2xl rounded-2xl integ-modal-card p-6 shadow-2xl space-y-5 border border-[#232328] bg-[#101013] overflow-hidden flex flex-col max-h-[85vh]">
+
+      <!-- Drawer Header -->
+      <div class="flex items-start justify-between border-b border-[#232328] pb-4 shrink-0">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-12 h-12 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] font-bold font-mono text-base shadow-lg">
+            {{ selectedProvider()?.name ? selectedProvider()?.name?.substring(0, 2)?.toUpperCase() : 'IN' }}
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-white font-display">{{ selectedProvider()?.name }}</h2>
+              <span
+                class="px-2 py-0.5 text-[9px] font-bold uppercase rounded font-mono"
+                [ngClass]="formatStatus(selectedProvider()?.status) === 'ACTIVE' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/40' : 'bg-amber-500/15 text-amber-400 border border-amber-500/40'">
+                {{ formatStatus(selectedProvider()?.status) }}
+              </span>
+            </div>
+            <p class="text-xs text-slate-400 font-mono mt-0.5">Key: <span class="text-[#00D4FF] font-bold">{{
+                selectedProvider()?.key }}</span></p>
+          </div>
+        </div>
+        <button type="button" (click)="closeDetails()"
+          class="w-8 h-8 rounded-lg bg-[#18181c] text-slate-400 hover:text-white flex items-center justify-center cursor-pointer transition-colors">
+          &times;
+        </button>
+      </div>
+
+      <!-- Drawer Content -->
+      <div class="space-y-4 overflow-y-auto pr-1 flex-1">
+
+        <!-- Metadata Matrix -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs font-mono">
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Provider ID</span>
+            <span class="text-slate-300 truncate block text-[11px]" [title]="selectedProvider()?.id">{{ selectedProvider()?.id }}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328]">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Bridge Type</span>
+            <span class="text-[#00D4FF] font-bold text-xs truncate block">{{ selectedProvider()?.type }}</span>
+          </div>
+          <div class="p-3 rounded-xl bg-[#18181c] border border-[#232328] col-span-2 sm:col-span-1">
+            <span class="text-[10px] text-slate-500 uppercase font-bold block mb-1">Pipeline Latency</span>
+            <span class="text-slate-300 text-[11px]">11ms (Verified)</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1">
+          <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 font-mono block">Bridge Scope &amp; Architecture</span>
+          <p class="text-xs text-slate-300 leading-relaxed">{{ selectedProvider()?.description || 'Enterprise platform bridge connector supporting real-time webhook propagation, token exchange, and bi-directional tenant synchronizations.' }}</p>
+        </div>
+
+        <!-- Bridge Health & Telemetry Standards -->
+        <div class="p-4 rounded-xl bg-[#18181c] border border-[#232328] space-y-3">
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 font-mono">Integration Protocols &amp; SLA</span>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Zero-Trust HMAC Signature</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Automatic Retry &amp; Dead-Letter</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Encrypted Transport (TLS 1.3)</span>
+            </div>
+            <div class="flex items-center gap-2 p-2 rounded-lg bg-[#101013] border border-[#232328]">
+              <app-icon name="check" size="14" class="text-[#00D4FF]"></app-icon>
+              <span class="text-slate-300">Multi-Tenant Scoped Bridge</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Bottom Modal Footer -->
+      <div class="pt-4 mt-2 border-t border-[#232328] flex items-center justify-between shrink-0">
+        <button type="button" (click)="testBridge(selectedProvider()!)"
+          class="px-3.5 py-2 text-xs font-bold text-[#00D4FF] hover:text-white bg-[#00D4FF]/10 hover:bg-[#00D4FF]/20 border border-[#00D4FF]/40 rounded-xl cursor-pointer transition-colors shadow-md flex items-center gap-1.5">
+          <app-icon name="refresh" size="13" [class.animate-spin]="isTesting()"></app-icon>
+          <span>Verify Live Sync</span>
+        </button>
+        <button type="button" (click)="closeDetails()"
+          class="px-5 py-2 text-xs font-bold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl cursor-pointer transition-colors shadow-md">
+          Close
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Create Integration Modal -->
+  <div *ngIf="isCreateModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl integ-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="refresh" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Register Integration Bridge</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">Define cross-system data pipeline and webhook connector</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeCreateModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="createForm" (ngSubmit)="onCreateSubmit()" class="space-y-4" novalidate>
+
+        <!-- Provider Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Provider / Connector Name <span class="text-[#00D4FF] font-bold">*</span></span>
+            <span class="text-[10px] text-slate-400 font-mono">Bridge Title</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="refresh" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. WorkWell Finance Connector"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- Key & Bridge Type Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+              <span>Bridge Key <span class="text-[#00D4FF] font-bold">*</span></span>
+            </label>
+            <div class="relative">
+              <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+                <app-icon name="key" size="15"></app-icon>
+              </div>
+              <input type="text" formControlName="key" placeholder="WORKWELL_CONNECTOR"
+                class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white uppercase placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-mono transition-all" />
+            </div>
+          </div>
+
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Connector Type</label>
+            <app-custom-select
+              formControlName="type"
+              [options]="typeOptions"
+              placeholder="Select Type">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Description</span>
+            <span class="text-[10px] text-slate-400">Pipeline Scope</span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-3 text-slate-400 pointer-events-none z-10">
+              <app-icon name="fileText" size="15"></app-icon>
+            </div>
+            <textarea formControlName="description" rows="2"
+              placeholder="Bi-directional synchronization, telemetry events, and audit forwarding..."
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all font-sans"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeCreateModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="createForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="plusIcon" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Provisioning...' : 'Register Bridge' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Integration Modal -->
+  <div *ngIf="isEditModalOpen()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn select-none">
+    <div
+      class="w-full max-w-lg rounded-3xl integ-modal-card p-6 sm:p-7 shadow-2xl space-y-5 relative overflow-hidden border border-[#232328] bg-[#101013]">
+
+      <!-- Top Glowing Accent Gradient Strip -->
+      <div class="absolute inset-x-0 top-0 h-[2.5px] bg-gradient-to-r from-[#00D4FF] via-sky-400 to-[#0284c7]">
+      </div>
+
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-[#232328] pb-4">
+        <div class="flex items-center gap-3">
+          <div
+            class="w-10 h-10 rounded-2xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md shrink-0">
+            <app-icon name="edit" size="18"></app-icon>
+          </div>
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white font-sans tracking-tight">Edit Integration Provider</h2>
+            <p class="text-xs text-slate-400 font-sans mt-0.5">{{ providerToEdit()?.key }}</p>
+          </div>
+        </div>
+        <button type="button" (click)="closeEditModal()"
+          class="w-8 h-8 rounded-xl bg-[#18181c] hover:bg-[#27272a] text-slate-400 hover:text-white border border-[#232328] transition-colors flex items-center justify-center text-lg cursor-pointer"
+          title="Close dialog">
+          &times;
+        </button>
+      </div>
+
+      <form [formGroup]="editForm" (ngSubmit)="onEditSubmit()" class="space-y-4" novalidate>
+
+        <!-- Provider Name -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200 flex items-center justify-between">
+            <span>Provider Name <span class="text-[#00D4FF] font-bold">*</span></span>
+          </label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10">
+              <app-icon name="refresh" size="16"></app-icon>
+            </div>
+            <input type="text" formControlName="name" placeholder="e.g. WorkWell Finance Connector"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 font-medium transition-all" />
+          </div>
+        </div>
+
+        <!-- Type & Status Grid -->
+        <div class="grid grid-cols-2 gap-3">
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Connector Type</label>
+            <app-custom-select
+              formControlName="type"
+              [options]="typeOptions"
+              placeholder="Select Type">
+            </app-custom-select>
+          </div>
+          <div class="space-y-1.5 text-left">
+            <label class="block text-xs font-semibold text-slate-200">Status</label>
+            <app-custom-select
+              formControlName="status"
+              [options]="modalStatusOptions"
+              placeholder="Select Status">
+            </app-custom-select>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="space-y-1.5 text-left">
+          <label class="block text-xs font-semibold text-slate-200">Description</label>
+          <div class="relative">
+            <div class="absolute left-3.5 top-3 text-slate-400 pointer-events-none z-10">
+              <app-icon name="fileText" size="15"></app-icon>
+            </div>
+            <textarea formControlName="description" rows="2"
+              class="w-full pl-10 pr-4 py-2.5 bg-[#18181c] border border-[#27272a] rounded-xl text-xs text-white placeholder:text-slate-500 focus:outline-none focus:border-[#00D4FF] focus:ring-2 focus:ring-[#00D4FF]/20 transition-all font-sans"></textarea>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="pt-3 flex items-center justify-end gap-2.5 border-t border-[#232328]">
+          <button type="button" (click)="closeEditModal()"
+            class="px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer">
+            Cancel
+          </button>
+          <button type="submit" [disabled]="editForm.invalid || isSubmitting()"
+            class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 transition-all cursor-pointer flex items-center gap-1.5 active:scale-95 disabled:opacity-60">
+            <app-icon name="check" size="14"></app-icon>
+            <span>{{ isSubmitting() ? 'Saving...' : 'Save Changes' }}</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+
+  <!-- Delete Provider Confirmation Modal -->
+  <div *ngIf="providerToDelete()"
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
+    <div class="w-full max-w-sm rounded-2xl border border-rose-900/50 bg-[#101013] p-6 shadow-2xl space-y-4">
+      <div class="flex items-center gap-3 text-rose-400">
+        <div class="w-10 h-10 rounded-xl bg-rose-950/80 border border-rose-800 flex items-center justify-center">
+          <app-icon name="trash" size="18"></app-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-white">Delete Integration Bridge</h2>
+          <p class="text-xs text-rose-400">Permanent Database Deletion</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-300">
+        Are you sure you want to delete <strong class="text-white">{{ providerToDelete()?.name }}</strong>? This will terminate all active webhook and bridge events for this connector.
+      </p>
+
+      <div class="pt-3 flex items-center justify-end gap-2 border-t border-[#232328]">
+        <button type="button" (click)="cancelDelete()"
+          class="px-4 py-2 text-xs font-medium text-slate-400 hover:text-white cursor-pointer">Cancel</button>
+        <button type="button" (click)="executeDelete()"
+          class="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-500 rounded-xl cursor-pointer">
+          Delete Connector
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,8 @@
+<button 
+  type="button" 
+  class="inline-flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-primary"
+  [ngClass]="colorClass"
+  [title]="tooltip"
+  (click)="onClick($event)">
+  <app-icon [name]="icon" [ngClass]="iconClass"></app-icon>
+</button>

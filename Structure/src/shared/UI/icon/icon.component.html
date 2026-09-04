@@ -1,0 +1,14 @@
+<!-- SVG Icons -->
+<div *ngIf="svg"
+     [innerHTML]="svg"
+     class="inline-flex"
+     [style.width.px]="size"
+     [style.height.px]="size">
+</div>
+
+<!-- FontAwesome fallback -->
+<i *ngIf="!svg"
+   class="fa-solid"
+   [ngClass]="name"
+   [style.fontSize.px]="size">
+</i>

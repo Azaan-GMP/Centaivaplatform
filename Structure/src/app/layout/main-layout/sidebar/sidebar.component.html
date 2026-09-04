@@ -1,0 +1,155 @@
+<aside
+  class="h-screen shrink-0 sidebar-glass-shell text-slate-300 transition-all duration-300 ease-in-out flex flex-col z-30 select-none overflow-hidden"
+  [style.width.rem]="isCollapsed() ? 4.5 : 15">
+  <!-- Top Brand Header (h-16 matches global header exactly) -->
+  <div class="h-16 flex items-center sidebar-brand-box px-3.5 shrink-0"
+    [ngClass]="isCollapsed() ? 'justify-center' : 'justify-between'">
+    <!-- Expanded Brand -->
+    <div routerLink="/dashboard" *ngIf="!isCollapsed()" class="flex items-center gap-2.5 cursor-pointer group">
+      <!-- Glowing Star Icon Badge -->
+      <div class="relative w-8 h-8 rounded-xl brand-icon-wrapper flex items-center justify-center shrink-0">
+        <div
+          class="absolute inset-0 bg-[#00D4FF]/20 rounded-xl blur-md group-hover:blur-lg transition-all animate-pulse">
+        </div>
+        <img src="assets/images/centaiva-icon.png" alt="Centaiva Star"
+          style="width: 20px; height: 20px; object-fit: contain;"
+          class="relative drop-shadow-[0_0_8px_rgba(0,212,255,0.85)] group-hover:scale-105 transition-transform" />
+      </div>
+
+      <!-- Crisp Brand Typography -->
+      <div class="flex flex-col">
+        <div class="flex items-center gap-1.5">
+          <span class="text-sm font-black tracking-wider text-white font-display uppercase">
+            CENTAIVA
+          </span>
+          <span
+            class="px-1.5 py-0.2 text-[9px] font-extrabold text-[#00D4FF] bg-[#00D4FF]/10 border border-[#00D4FF]/30 rounded font-mono shadow-sm">
+            OS
+          </span>
+        </div>
+        <span class="text-[9px] font-bold text-slate-400 tracking-wider uppercase font-mono mt-0.5">
+          Control Plane
+        </span>
+      </div>
+    </div>
+
+    <!-- Collapsed Star Icon -->
+    <div routerLink="/dashboard" *ngIf="isCollapsed()"
+      class="cursor-pointer group flex items-center justify-center relative" title="Centaiva Platform Control Plane">
+      <div class="w-8 h-8 rounded-xl brand-icon-wrapper flex items-center justify-center shadow-lg">
+        <img src="assets/images/centaiva-icon.png" alt="Centaiva"
+          style="width: 20px; height: 20px; object-fit: contain;"
+          class="relative drop-shadow-[0_0_10px_rgba(0,212,255,0.85)] group-hover:scale-110 transition-transform" />
+      </div>
+    </div>
+
+    <!-- Collapse Toggle Chevron in Header -->
+    <button type="button" (click)="toggleSidebar()" [attr.title]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      class="inline-flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 hover:text-[#00D4FF] hover:bg-[#232328] border border-[#232328] hover:border-[#00D4FF]/30 transition-all focus:outline-none cursor-pointer">
+      <svg class="h-3.5 w-3.5 transition-transform duration-200" [class.rotate-180]="isCollapsed()" fill="none"
+        stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Grouped Navigation Menu (Balanced Vertical Rhythm) -->
+  <div class="flex-1 overflow-y-auto no-scrollbar px-2.5 py-3 space-y-4">
+    <div *ngFor="let section of navSections" class="space-y-1">
+
+      <!-- Section Category Header -->
+      <div *ngIf="!isCollapsed() && section.title"
+        class="px-2 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-slate-400 font-mono">
+        {{ section.title }}
+      </div>
+
+      <div *ngIf="isCollapsed() && section.title" class="h-px bg-[#232328] my-1 mx-1"></div>
+
+      <!-- Navigation Items -->
+      <div class="space-y-1">
+        <ng-container *ngFor="let item of section.items">
+
+          <!-- Standard Single Link -->
+          <a *ngIf="!hasChildren(item)" [routerLink]="item.route" routerLinkActive="sidebar-active"
+            [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+            class="sidebar-nav-link group relative flex items-center rounded-xl py-2"
+            [ngClass]="isCollapsed() ? 'justify-center px-0' : 'gap-2.5 px-3'"
+            [attr.title]="isCollapsed() ? item.label : null">
+            <app-icon class="h-4 w-4 shrink-0 text-slate-400 group-hover:text-[#00D4FF] transition-colors"
+              [name]="item.icon"></app-icon>
+
+            <span *ngIf="!isCollapsed()"
+              class="truncate text-[13px] font-semibold text-slate-200 group-hover:text-white flex-1 transition-colors">
+              {{ item.label }}
+            </span>
+
+            <span *ngIf="!isCollapsed() && item.badge"
+              class="px-2 py-0.5 text-[9.5px] font-bold rounded-md uppercase font-mono shadow-sm"
+              [ngClass]="item.badgeType === 'cyan' ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30' : 'bg-[#232328] text-slate-300 border border-[#27272a]'">
+              {{ item.badge }}
+            </span>
+          </a>
+
+          <!-- Nested Accordion Item -->
+          <div *ngIf="hasChildren(item)" class="space-y-1">
+            <button type="button" (click)="toggleMenu(item.label)"
+              class="sidebar-nav-link w-full group relative flex items-center rounded-xl py-2 cursor-pointer focus:outline-none"
+              [ngClass]="isCollapsed() ? 'justify-center px-0' : 'gap-2.5 px-3'"
+              [class.sidebar-active]="isChildRouteActive(item)" [attr.title]="isCollapsed() ? item.label : null">
+              <app-icon class="h-4 w-4 shrink-0 text-slate-400 group-hover:text-[#00D4FF] transition-colors"
+                [name]="item.icon"></app-icon>
+
+              <span *ngIf="!isCollapsed()"
+                class="truncate text-[13px] font-semibold text-slate-200 group-hover:text-white flex-1 text-left transition-colors">
+                {{ item.label }}
+              </span>
+
+              <span *ngIf="!isCollapsed() && item.badge"
+                class="px-2 py-0.5 text-[9.5px] font-bold rounded-md uppercase font-mono shadow-sm"
+                [ngClass]="item.badgeType === 'cyan' ? 'bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30' : 'bg-[#232328] text-slate-300 border border-[#27272a]'">
+                {{ item.badge }}
+              </span>
+
+              <svg *ngIf="!isCollapsed()" class="h-3.5 w-3.5 text-slate-400 transition-transform duration-200"
+                [class.rotate-90]="isMenuExpanded(item.label)" fill="none" stroke="currentColor" stroke-width="2"
+                viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+
+            <!-- Expanded Children Submenu -->
+            <div *ngIf="!isCollapsed() && isMenuExpanded(item.label)"
+              class="pl-3 pr-1 py-1 space-y-1 sidebar-submenu-box ml-3 my-0.5">
+              <a *ngFor="let child of item.children" [routerLink]="child.route" routerLinkActive="sidebar-active"
+                class="sidebar-submenu-link group flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-semibold">
+                <app-icon [name]="child.icon" size="13" class="text-slate-400 group-hover:text-[#00D4FF]"></app-icon>
+                <span class="truncate">{{ child.label }}</span>
+              </a>
+            </div>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom: Compact Context Badge (h-13 fixed) -->
+  <div class="h-13 px-3.5 border-t border-[#232328] shrink-0 sidebar-footer-box flex items-center justify-between">
+    <div class="flex items-center gap-2.5" *ngIf="!isCollapsed()">
+      <span class="relative flex h-2 w-2">
+        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00D4FF] opacity-75"></span>
+        <span class="relative inline-flex rounded-full h-2 w-2 bg-[#00D4FF]"></span>
+      </span>
+      <div class="flex flex-col">
+        <span class="text-xs font-bold text-white leading-tight">Platform Owner</span>
+        <span class="text-[9.5px] text-[#00D4FF] font-mono font-semibold leading-tight mt-0.5">Zero-Trust
+          Active</span>
+      </div>
+    </div>
+    <span
+      class="px-2 py-0.5 text-[9.5px] font-bold text-slate-300 bg-[#16161a] border border-[#232328] rounded-md font-mono shadow-inner">
+      v2.4
+    </span>
+  </div>
+
+</aside>

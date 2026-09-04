@@ -1,0 +1,378 @@
+<div class="space-y-4 pb-6 animate-fadeIn">
+
+  <!-- Top Page Title & Stats Bar -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2.5">
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-tight text-white font-display">
+          Theme &amp; Preferences
+        </h1>
+        <span
+          class="px-2.5 py-0.5 text-xs font-bold font-mono rounded-full bg-[#00D4FF]/10 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm uppercase">
+          {{ themeService.theme() }} Mode Active
+        </span>
+      </div>
+      <p class="text-xs text-slate-400 font-mono mt-0.5">
+        Enterprise Visual Styling &bull; Brand Accents &bull; Platform Runtime Defaults &amp; Security Caches
+      </p>
+    </div>
+
+    <!-- Top Action Buttons -->
+    <div class="flex items-center gap-2.5 flex-wrap">
+      <button type="button" (click)="themeService.toggleTheme()"
+        class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-[#18181c] hover:bg-[#27272a] border border-[#232328] rounded-xl transition-all cursor-pointer shadow-md">
+        <span class="text-sm">{{ themeService.isDarkMode() ? '☀️' : '🌙' }}</span>
+        <span>Toggle to {{ themeService.isDarkMode() ? 'Light' : 'Dark' }}</span>
+      </button>
+
+      <button type="button" (click)="resetToDefaults()"
+        class="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/20 transition-all active:scale-95 cursor-pointer">
+        <app-icon name="refresh" size="13"></app-icon>
+        <span>Reset Defaults</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- Tab Navigation Bar -->
+  <div
+    class="relative z-30 p-2 rounded-2xl pref-glass-bar flex items-center gap-2 overflow-x-auto shadow-xl">
+    <button
+      type="button"
+      (click)="activeTab.set('appearance')"
+      class="px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0 text-xs font-bold"
+      [ngClass]="activeTab() === 'appearance' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#18181c] border border-transparent'"
+    >
+      <app-icon name="dashboard" size="14"></app-icon>
+      <span>Appearance &amp; Themes</span>
+    </button>
+    <button
+      type="button"
+      (click)="activeTab.set('platform')"
+      class="px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0 text-xs font-bold"
+      [ngClass]="activeTab() === 'platform' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#18181c] border border-transparent'"
+    >
+      <app-icon name="building" size="14"></app-icon>
+      <span>Platform &amp; Runtime APIs</span>
+    </button>
+    <button
+      type="button"
+      (click)="activeTab.set('notifications')"
+      class="px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0 text-xs font-bold"
+      [ngClass]="activeTab() === 'notifications' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#18181c] border border-transparent'"
+    >
+      <app-icon name="reports" size="14"></app-icon>
+      <span>Notifications &amp; Alerts</span>
+    </button>
+    <button
+      type="button"
+      (click)="activeTab.set('security')"
+      class="px-4 py-2 rounded-xl transition-all flex items-center gap-2 cursor-pointer shrink-0 text-xs font-bold"
+      [ngClass]="activeTab() === 'security' ? 'bg-[#00D4FF]/15 text-[#00D4FF] border border-[#00D4FF]/30 shadow-sm' : 'text-slate-400 hover:text-white hover:bg-[#18181c] border border-transparent'"
+    >
+      <app-icon name="shield" size="14"></app-icon>
+      <span>Security &amp; Caches</span>
+    </button>
+  </div>
+
+  <!-- TAB 1: APPEARANCE & THEME -->
+  <div *ngIf="activeTab() === 'appearance'" class="space-y-4 animate-fadeIn">
+    
+    <!-- Theme Mode Cards Section -->
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Interface Theme Mode</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Select your preferred visual style. Changes apply immediately across all modules.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+        
+        <!-- Dark Theme Card -->
+        <div
+          (click)="setTheme('dark')"
+          class="relative p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-4 group shadow-lg theme-option-card"
+          [class.active-theme]="themeService.theme() === 'dark'"
+        >
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-[#00D4FF]/10 border border-[#00D4FF]/30 flex items-center justify-center text-[#00D4FF] shadow-md">
+                <span class="text-lg">🌙</span>
+              </div>
+              <span *ngIf="themeService.theme() === 'dark'" class="px-2 py-0.5 text-[9px] font-bold text-[#00D4FF] bg-[#00D4FF]/15 border border-[#00D4FF]/40 rounded font-mono">
+                ACTIVE
+              </span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors">Dark Mode</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">Deep titanium obsidian with Electric Sky Blue accents for modern high-contrast operations.</p>
+            </div>
+          </div>
+
+          <!-- Mini Preview Wireframe -->
+          <div class="p-3 rounded-xl bg-[#09090b] border border-[#232328] space-y-2 pointer-events-none shadow-inner">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-[#00D4FF]"></div>
+                <div class="w-12 h-1.5 rounded bg-slate-700"></div>
+              </div>
+              <div class="w-6 h-1.5 rounded bg-sky-500/40"></div>
+            </div>
+            <div class="w-full h-1.5 rounded bg-slate-800"></div>
+            <div class="w-3/4 h-1.5 rounded bg-slate-800"></div>
+          </div>
+        </div>
+
+        <!-- Light Theme Card -->
+        <div
+          (click)="setTheme('light')"
+          class="relative p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-4 group shadow-lg theme-option-card"
+          [class.active-theme]="themeService.theme() === 'light'"
+        >
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-[#0284c7] shadow-md">
+                <span class="text-lg">☀️</span>
+              </div>
+              <span *ngIf="themeService.theme() === 'light'" class="px-2 py-0.5 text-[9px] font-bold text-[#0284c7] bg-sky-100 border border-sky-300 rounded font-mono">
+                ACTIVE
+              </span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors">Light Mode</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">Crisp, clean enterprise white and light slate with clear typography and daytime readability.</p>
+            </div>
+          </div>
+
+          <!-- Mini Preview Wireframe -->
+          <div class="p-3 rounded-xl bg-slate-100 border border-slate-300 space-y-2 pointer-events-none shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <div class="w-2.5 h-2.5 rounded-full bg-sky-600"></div>
+                <div class="w-12 h-1.5 rounded bg-slate-400"></div>
+              </div>
+              <div class="w-6 h-1.5 rounded bg-sky-600/30"></div>
+            </div>
+            <div class="w-full h-1.5 rounded bg-slate-300"></div>
+            <div class="w-3/4 h-1.5 rounded bg-slate-300"></div>
+          </div>
+        </div>
+
+        <!-- System Sync Card -->
+        <div
+          (click)="setTheme('system')"
+          class="relative p-4 sm:p-5 rounded-2xl cursor-pointer transition-all duration-200 flex flex-col justify-between space-y-4 group shadow-lg theme-option-card"
+          [class.active-theme]="themeService.theme() === 'system'"
+        >
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-300 shadow-md">
+                <span class="text-lg">💻</span>
+              </div>
+              <span *ngIf="themeService.theme() === 'system'" class="px-2 py-0.5 text-[9px] font-bold text-[#00D4FF] bg-[#00D4FF]/15 border border-[#00D4FF]/40 rounded font-mono">
+                ACTIVE
+              </span>
+            </div>
+            <div>
+              <h3 class="text-sm font-bold text-white group-hover:text-[#00D4FF] transition-colors">System Sync</h3>
+              <p class="text-xs text-slate-400 mt-1 leading-relaxed">Automatically synchronizes with your operating system preference (Windows / macOS theme).</p>
+            </div>
+          </div>
+
+          <!-- Mini Preview Wireframe -->
+          <div class="p-3 rounded-xl bg-gradient-to-r from-[#09090b] via-slate-700 to-slate-200 border border-slate-600 space-y-2 pointer-events-none shadow-sm">
+            <div class="flex items-center justify-between">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#00D4FF]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-sky-600"></div>
+            </div>
+            <div class="w-full h-1.5 rounded bg-slate-500"></div>
+            <div class="w-3/4 h-1.5 rounded bg-slate-500"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Accent Color Selector -->
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Brand Accent Palette</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Customize highlight tones for buttons, active indicators, and focus rings.</p>
+      </div>
+
+      <div class="flex items-center gap-3 flex-wrap pt-1">
+        <button
+          type="button"
+          (click)="setAccent('cyan')"
+          class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-pointer"
+          [ngClass]="themeService.accentColor() === 'cyan' ? 'border-[#00D4FF] bg-[#00D4FF]/15 text-[#00D4FF] shadow-sm font-bold' : 'border-[#232328] bg-[#18181c] text-slate-400 hover:text-white'"
+        >
+          <span class="w-3.5 h-3.5 rounded-full bg-[#00D4FF] shadow-sm shadow-[#00D4FF]/50"></span>
+          <span class="text-xs">Electric Sky (#00D4FF)</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="setAccent('blue')"
+          class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-pointer"
+          [ngClass]="themeService.accentColor() === 'blue' ? 'border-sky-400 bg-sky-950/40 text-sky-300 shadow-sm font-bold' : 'border-[#232328] bg-[#18181c] text-slate-400 hover:text-white'"
+        >
+          <span class="w-3.5 h-3.5 rounded-full bg-sky-500 shadow-sm shadow-sky-500/50"></span>
+          <span class="text-xs">Cobalt Blue (#0284C7)</span>
+        </button>
+
+        <button
+          type="button"
+          (click)="setAccent('amber')"
+          class="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all cursor-pointer"
+          [ngClass]="themeService.accentColor() === 'amber' ? 'border-amber-400 bg-amber-950/40 text-amber-300 shadow-sm font-bold' : 'border-[#232328] bg-[#18181c] text-slate-400 hover:text-white'"
+        >
+          <span class="w-3.5 h-3.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50"></span>
+          <span class="text-xs">Security Amber (#F59E0B)</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Layout Density Selector -->
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Table &amp; Layout Information Density</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Control row heights and spacing across management tables and cards.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+        <div
+          (click)="setDensity('comfortable')"
+          class="p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between pref-sub-card"
+          [ngClass]="themeService.contentDensity() === 'comfortable' ? 'border-[#00D4FF] bg-[#00D4FF]/10' : 'border-[#232328] bg-[#18181c]'"
+        >
+          <div>
+            <h4 class="text-xs font-bold text-white">Comfortable (Standard)</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">Optimized for high readability and executive presentations</p>
+          </div>
+          <span *ngIf="themeService.contentDensity() === 'comfortable'" class="text-[#00D4FF] font-bold text-base">&check;</span>
+        </div>
+
+        <div
+          (click)="setDensity('compact')"
+          class="p-4 rounded-xl border cursor-pointer transition-all flex items-center justify-between pref-sub-card"
+          [ngClass]="themeService.contentDensity() === 'compact' ? 'border-[#00D4FF] bg-[#00D4FF]/10' : 'border-[#232328] bg-[#18181c]'"
+        >
+          <div>
+            <h4 class="text-xs font-bold text-white">Compact (High Information Density)</h4>
+            <p class="text-[11px] text-slate-400 mt-0.5">Smaller cell padding for power operators managing massive lists</p>
+          </div>
+          <span *ngIf="themeService.contentDensity() === 'compact'" class="text-[#00D4FF] font-bold text-base">&check;</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TAB 2: PLATFORM & RUNTIME APIS -->
+  <div *ngIf="activeTab() === 'platform'" class="space-y-4 animate-fadeIn">
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Active Platform Backend Connection</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Current runtime endpoints, OpenAPI v1 discovery configuration, and OAuth tokens.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1.5 pref-sub-card">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-slate-500 font-bold uppercase">Centaiva Platform API Base</span>
+            <button type="button" (click)="copyApiUrl(appEnv.centaivaApiUrl, 'Platform API URL')" class="text-[#00D4FF] hover:underline cursor-pointer text-[10px]">Copy</button>
+          </div>
+          <p class="text-[#00D4FF] font-bold text-[11px]">{{ appEnv.centaivaApiUrl }}</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1.5 pref-sub-card">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] text-slate-500 font-bold uppercase">WorkWell Finance API Base</span>
+            <button type="button" (click)="copyApiUrl(appEnv.workwellApiUrl || 'http://192.168.88.27:8091', 'WorkWell API URL')" class="text-[#00D4FF] hover:underline cursor-pointer text-[10px]">Copy</button>
+          </div>
+          <p class="text-[#00D4FF] font-bold text-[11px]">{{ appEnv.workwellApiUrl || 'http://192.168.88.27:8091' }}</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1 pref-sub-card">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">Platform Client ID</span>
+          <p class="text-slate-300 font-bold">centaiva-platform-web</p>
+        </div>
+
+        <div class="p-3.5 rounded-xl bg-[#18181c] border border-[#232328] space-y-1 pref-sub-card">
+          <span class="text-[10px] text-slate-500 font-bold uppercase">WorkWell Client ID</span>
+          <p class="text-slate-300 font-bold">workwell-finance-web</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 3: NOTIFICATIONS & ALERTS -->
+  <div *ngIf="activeTab() === 'notifications'" class="space-y-4 animate-fadeIn">
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Event Notification Channels</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Control where system events and tenant provisioning alerts are broadcasted.</p>
+      </div>
+
+      <div class="space-y-3 pt-1">
+        <label class="flex items-center justify-between p-3.5 rounded-xl bg-[#18181c] border border-[#232328] cursor-pointer hover:border-[#383842] transition-colors pref-sub-card">
+          <div>
+            <h4 class="text-xs font-bold text-white">Browser Push &amp; In-App Toast Alerts</h4>
+            <p class="text-[11px] text-slate-400">Receive instant toasts when organizations or tenants are updated</p>
+          </div>
+          <input type="checkbox" [(ngModel)]="notificationsBrowser" class="w-4 h-4 rounded text-[#00D4FF] bg-slate-900 border-slate-700 cursor-pointer" />
+        </label>
+
+        <label class="flex items-center justify-between p-3.5 rounded-xl bg-[#18181c] border border-[#232328] cursor-pointer hover:border-[#383842] transition-colors pref-sub-card">
+          <div>
+            <h4 class="text-xs font-bold text-white">Security &amp; RBAC Privilege Changes</h4>
+            <p class="text-[11px] text-slate-400">Send high-priority notifications when role assignments are modified</p>
+          </div>
+          <input type="checkbox" [(ngModel)]="notificationsSecurityAlerts" class="w-4 h-4 rounded text-[#00D4FF] bg-slate-900 border-slate-700 cursor-pointer" />
+        </label>
+      </div>
+
+      <div class="pt-3 border-t border-[#232328] flex justify-end">
+        <button
+          type="button"
+          (click)="saveNotificationPreferences()"
+          class="px-5 py-2.5 text-xs font-bold text-slate-950 bg-[#00D4FF] hover:bg-sky-400 rounded-xl shadow-lg shadow-[#00D4FF]/25 cursor-pointer active:scale-95 transition-all"
+        >
+          Save Notification Settings
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TAB 4: SECURITY & CACHING -->
+  <div *ngIf="activeTab() === 'security'" class="space-y-4 animate-fadeIn">
+    <div class="p-5 rounded-2xl border border-[#232328] bg-[#101013] shadow-xl space-y-4 pref-card">
+      <div>
+        <h2 class="text-base font-bold text-white font-display">Client Storage &amp; Cache Management</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Purge temporary cache states and reset UI partition filters safely.</p>
+      </div>
+
+      <div class="p-4 rounded-xl bg-amber-950/20 border border-amber-800/40 text-xs text-amber-300 space-y-2">
+        <div class="flex items-center gap-2 font-bold">
+          <app-icon name="alert" size="14"></app-icon>
+          <span>Local Cache Reset Policy</span>
+        </div>
+        <p class="text-[11px] text-slate-300 leading-relaxed">
+          Purging client caches will clear temporary view filters, sort preferences, and dynamic snapshot caches. Your current authentication session and active theme mode will be preserved automatically.
+        </p>
+      </div>
+
+      <div class="pt-2 flex justify-start">
+        <button
+          type="button"
+          (click)="clearLocalCaches()"
+          class="px-4 py-2.5 text-xs font-bold text-rose-400 hover:text-white bg-rose-950/60 hover:bg-rose-900 border border-rose-800 rounded-xl cursor-pointer transition-colors shadow-md flex items-center gap-1.5"
+        >
+          <app-icon name="trash" size="13"></app-icon>
+          <span>Purge Client Storage &amp; Caches</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

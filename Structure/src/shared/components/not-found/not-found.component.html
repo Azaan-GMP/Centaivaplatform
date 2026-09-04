@@ -1,0 +1,67 @@
+<div class="flex flex-col items-center justify-center h-full min-h-[70vh] px-4 py-10 sm:px-6 lg:px-8">
+  <div class="w-full max-w-xl text-center">
+
+    <!-- Illustration -->
+    <div class=" flex justify-center">
+      <svg viewBox="0 0 500 300" class="h-55 w-auto">
+
+        <!-- Background circle -->
+        <circle cx="250" cy="150" r="120" fill="#e0f2fe" />
+
+        <!-- 404 Text -->
+        <text x="50%" y="49%" text-anchor="middle"
+          class="fill-slate-800"
+          font-size="72"
+          font-weight="800"
+          font-family="Inter, sans-serif">
+          404
+        </text>
+
+        <!-- Floating shapes -->
+        <circle cx="120" cy="90" r="8" fill="#38bdf8" opacity="0.7" />
+        <circle cx="380" cy="80" r="6" fill="#22c55e" opacity="0.6" />
+        <circle cx="400" cy="200" r="10" fill="#f59e0b" opacity="0.5" />
+
+        <!-- Broken path line -->
+        <path
+          d="M100 200 Q180 160 250 200 T400 200"
+          stroke="#38bdf8"
+          stroke-width="2"
+          fill="none"
+          stroke-dasharray="6 6"
+        />
+
+        <!-- Sad face -->
+        <circle cx="250" cy="160" r="40" fill="white" stroke="#cbd5f5" stroke-width="2"/>
+        <circle cx="235" cy="150" r="4" fill="#334155"/>
+        <circle cx="265" cy="150" r="4" fill="#334155"/>
+        <path
+          d="M235 175 Q250 160 265 175"
+          stroke="#334155"
+          stroke-width="2"
+          fill="none"
+          stroke-linecap="round"
+        />
+
+      </svg>
+    </div>
+
+    <!-- Text -->
+    <div class="text-5xl font-extrabold text-slate-900">
+      Page not found
+    </div>
+
+    <p class="mt-3 text-sm text-slate-500">
+      The page you’re looking for doesn’t exist or has been moved.
+    </p>
+
+    <!-- Actions -->
+    <div class="mt-5 flex justify-center gap-3">
+      <app-button variant="primary" routerLink="/dashboard">
+        Go Home
+      </app-button>
+
+    </div>
+
+  </div>
+</div>

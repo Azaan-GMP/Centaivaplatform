@@ -1,0 +1,28 @@
+<div *ngIf="isOpen" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+
+  <div class="w-full rounded-2xl bg-white shadow-lg flex flex-col max-h-[90vh]" [ngClass]="maxWidthClass">
+
+    <div class="flex items-center justify-between border-b px-5 py-3 dialog-header shrink-0">
+      <div>
+        <h3 class="text-lg font-semibold">{{ title }}</h3>
+        <p *ngIf="subtitle" class="mt-1 text-xs text-slate-500">
+          {{ subtitle }}
+        </p>
+      </div>
+
+      <button *ngIf="showCloseButton" type="button" class="rounded-lg p-2 dialog-close-button" (click)="close()">
+        ✕
+      </button>
+    </div>
+
+    <div class="p-5 overflow-y-auto flex-1 custom-scrollbar">
+      <ng-content></ng-content>
+    </div>
+
+    <div class="border-t border-slate-100 px-5 py-4 dialog-footer shrink-0">
+      <div class="flex items-center justify-end gap-3">
+        <ng-content select="[dialog-footer]"></ng-content>
+      </div>
+    </div>
+  </div>
+</div>

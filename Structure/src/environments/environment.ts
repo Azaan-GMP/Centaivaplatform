@@ -1,7 +1,7 @@
 export const environment = {
   production: false,
-  centaivaApiUrl: 'http://192.168.88.27:8081',
-  workwellApiUrl: 'http://192.168.88.27:8091',
+  centaivaApiUrl: 'https://oauth.centaiva.com',
+  workwellApiUrl: 'https://api.workwell.centaiva.com',
   platformClientId: 'centaiva-platform-web',
   platformScope: 'openid profile email roles centaiva.platform',
   financeClientId: 'workwell-finance-web',

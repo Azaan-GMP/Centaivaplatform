@@ -1,7 +1,7 @@
 # CENTAIVA PLATFORM — API MEMORY
 
 ## Base URLs by Environment
-- **QA Centaiva API / OAuth**: `http://192.168.88.27:8081`
+- **QA Centaiva API / OAuth**: `https://api.workwell.centaiva.com`
 - **QA WorkWell API**: `http://192.168.88.27:8091`
 - **Production Centaiva OAuth / API**: `https://oauth.centaiva.com`
 - **Production WorkWell API**: `https://api.workwell.centaiva.com`

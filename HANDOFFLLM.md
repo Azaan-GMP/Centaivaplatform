@@ -55,7 +55,7 @@ Core Platform Modules Implemented, Executive Visual Polish Complete & Live -> Us
 
 ## Next exact steps
 1. User tests and navigates through each module on `http://localhost:4200/`.
-2. Verify live responses against QA API at `http://192.168.88.27:8081`.
+2. Verify live responses against QA API at `https://api.workwell.centaiva.com`.
 3. Proceed to any remaining specialized features as requested.
 
 ## Do not change

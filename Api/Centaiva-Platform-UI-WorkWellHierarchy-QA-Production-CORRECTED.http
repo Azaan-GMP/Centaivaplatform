@@ -28,7 +28,7 @@
 ###############################################################################
 
 # QA
-@qaCentaivaUrl = http://192.168.88.27:8081
+@qaCentaivaUrl = https://api.workwell.centaiva.com
 @qaWorkwellUrl = http://192.168.88.27:8091
 @qaWorkwellWebUrl = http://localhost:4200
 

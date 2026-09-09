@@ -100,7 +100,7 @@ export class LoginComponent implements OnInit {
         this.isSubmitting.set(false);
         let errorMsg = 'Invalid email or password. Please verify your credentials.';
         if (err.status === 0) {
-          errorMsg = 'Unable to connect to Centaiva OAuth service (http://192.168.88.27:8081). Please check network connection.';
+          errorMsg = 'Unable to connect to Centaiva OAuth service (https://api.workwell.centaiva.com). Please check network connection.';
         } else if (err.error?.error_description) {
           errorMsg = err.error.error_description;
         } else if (err.error?.message) {

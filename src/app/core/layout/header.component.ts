@@ -42,6 +42,7 @@ export class HeaderComponent {
   readonly quickActions = QUICK_ACTIONS;
   readonly searchTerm = signal('');
   readonly searchFocused = signal(false);
+  readonly darkMode = this.layout.darkMode;
 
   private readonly url = toSignal(
     this.router.events.pipe(
@@ -128,6 +129,10 @@ export class HeaderComponent {
 
   openMobileNav(): void {
     this.layout.openMobileNav();
+  }
+
+  toggleDarkMode(): void {
+    this.layout.toggleDarkMode();
   }
 
   onSearch(event: Event): void {

@@ -78,6 +78,17 @@
 
     <button
       type="button"
+      class="btn btn--ghost btn--icon header__theme"
+      [attr.aria-label]="darkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+      [pTooltip]="darkMode() ? 'Light mode' : 'Dark mode'"
+      tooltipPosition="bottom"
+      (click)="toggleDarkMode()"
+    >
+      <i [class]="darkMode() ? 'pi pi-sun' : 'pi pi-moon'" aria-hidden="true"></i>
+    </button>
+
+    <button
+      type="button"
       class="btn btn--ghost btn--icon header__bell"
       aria-label="Notifications"
       pTooltip="Notifications"

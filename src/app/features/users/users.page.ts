@@ -6,14 +6,11 @@ import { MenuItem } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
 import { SelectModule } from 'primeng/select';
 import { TooltipModule } from 'primeng/tooltip';
-import { Organization, PlatformUser, SelectOption, Tenant } from '../../core/models';
+import { finalize, timeout } from 'rxjs';
+import { PlatformUser, SelectOption } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
-import {
-  OrganizationsService,
-  ProductsService,
-  TenantsService,
-  UsersService,
-} from '../../core/services/data-contracts';
+import { UsersService } from '../../core/services/data-contracts';
+import { DirectoryOptionDto, UsersDirectoryApiService } from '../../core/services/users-directory-api.service';
 import {
   ColumnDef,
   ConfirmDialogComponent,
@@ -52,9 +49,7 @@ import {
 })
 export class UsersPage {
   private readonly users = inject(UsersService);
-  private readonly organizations = inject(OrganizationsService);
-  private readonly tenants = inject(TenantsService);
-  private readonly products = inject(ProductsService);
+  private readonly directory = inject(UsersDirectoryApiService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly formBuilder = inject(FormBuilder);
@@ -69,8 +64,8 @@ export class UsersPage {
   readonly pendingUser = signal<PlatformUser | null>(null);
   readonly saving = signal(false);
 
-  private readonly organizationList = signal<Organization[]>([]);
-  private readonly tenantList = signal<Tenant[]>([]);
+  private readonly organizationList = signal<DirectoryOptionDto[]>([]);
+  private readonly tenantList = signal<DirectoryOptionDto[]>([]);
   private readonly productOptions = signal<SelectOption[]>([]);
 
   readonly columns: ColumnDef[] = [
@@ -89,20 +84,15 @@ export class UsersPage {
     firstName: ['', Validators.required],
     lastName: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    jobTitle: [''],
+    temporaryPassword: ['', Validators.minLength(8)],
     organizationId: ['', Validators.required],
-    tenantId: [''],
-    role: ['Read Only', Validators.required],
+    tenantId: ['', Validators.required],
+    role: ['USER', Validators.required],
   });
 
   readonly roleOptions: SelectOption[] = [
-    { label: 'Platform Owner', value: 'Platform Owner' },
-    { label: 'Organization Admin', value: 'Organization Admin' },
-    { label: 'Tenant Admin', value: 'Tenant Admin' },
-    { label: 'Finance Admin', value: 'Finance Admin' },
-    { label: 'Timesheet Admin', value: 'Timesheet Admin' },
-    { label: 'Timesheet Reviewer', value: 'Timesheet Reviewer' },
-    { label: 'Read Only', value: 'Read Only' },
+    { label: 'User', value: 'USER' },
+    { label: 'Tenant Admin', value: 'TENANT_ADMIN' },
   ];
 
   readonly organizationOptions = computed<SelectOption[]>(() =>
@@ -164,11 +154,15 @@ export class UsersPage {
       this.rows.set(users);
       this.loading.set(false);
     });
-    this.organizations.all().subscribe((organizations) => this.organizationList.set(organizations));
-    this.tenants.all().subscribe((tenants) => this.tenantList.set(tenants));
-    this.products.all().subscribe((products) =>
+    this.directory.organizations().subscribe((organizations) => this.organizationList.set(organizations));
+    this.directory.tenants().subscribe((tenants) => this.tenantList.set(tenants));
+    this.directory.products().subscribe((products) =>
       this.productOptions.set(products.map((product) => ({ label: product.name, value: product.key }))),
     );
+    this.form.controls.organizationId.valueChanges.subscribe((organizationId) => {
+      this.form.controls.tenantId.setValue('');
+      this.directory.tenants(organizationId || undefined).subscribe((tenants) => this.tenantList.set(tenants));
+    });
   }
 
   onFilterChange(change: { key: string; value: string | null }): void {
@@ -215,7 +209,17 @@ export class UsersPage {
   }
 
   openCreate(): void {
-    this.form.reset({ role: 'Read Only', organizationId: this.organizationOptions()[0]?.value ?? '' });
+    this.form.reset({
+      firstName: '',
+      lastName: '',
+      email: '',
+      temporaryPassword: '',
+      role: 'USER',
+      organizationId: this.organizationOptions()[0]?.value ?? '',
+      tenantId: '',
+    });
+    this.form.markAsPristine();
+    this.form.markAsUntouched();
     this.createOpen.set(true);
   }
 
@@ -229,23 +233,50 @@ export class UsersPage {
     const value = this.form.getRawValue();
 
     this.users
-      .create({
-        firstName: value.firstName,
-        lastName: value.lastName,
+      .createTenantUser(value.tenantId, {
         displayName: `${value.firstName} ${value.lastName}`,
         email: value.email,
-        jobTitle: value.jobTitle || value.role,
-        primaryRole: value.role,
-        organizationIds: value.organizationId ? [value.organizationId] : [],
-        tenantIds: value.tenantId ? [value.tenantId] : [],
-        status: 'Invited',
+        temporaryPassword: value.temporaryPassword || undefined,
+        applicationKey: 'WORKWELL_FINANCE',
+        roleKey: value.role,
       })
-      .subscribe((user) => {
-        this.rows.update((users) => [user, ...users]);
-        this.saving.set(false);
-        this.createOpen.set(false);
-        this.notifications.success('User invited', `An invitation was sent to ${user.email}.`);
+      .pipe(
+        timeout(30000),
+        finalize(() => this.saving.set(false)),
+      )
+      .subscribe({
+        next: (user) => {
+          this.rows.update((users) => [user, ...users]);
+          this.createOpen.set(false);
+          this.notifications.success('User created', `${user.email} was added to the selected tenant.`);
+        },
+        error: (error: unknown) => {
+          const detail = this.createErrorMessage(error);
+          this.notifications.error('Could not create tenant user', detail);
+        },
       });
+  }
+
+  private createErrorMessage(error: unknown): string {
+    if (typeof error === 'object' && error !== null) {
+      const response = error as {
+        name?: string;
+        error?: { error_description?: string; detail?: string; message?: string } | string;
+        message?: string;
+      };
+
+      if (response.name === 'TimeoutError') {
+        return 'The server did not respond within 30 seconds. Please verify the QA API and try again.';
+      }
+
+      if (typeof response.error === 'string' && response.error.trim()) return response.error;
+      if (typeof response.error === 'object' && response.error !== null) {
+        return response.error.error_description ?? response.error.detail ?? response.error.message ?? 'The API rejected the request.';
+      }
+      if (response.message) return response.message;
+    }
+
+    return 'The API rejected the request. Check the browser Network response for details.';
   }
 
   invalid(control: 'firstName' | 'lastName' | 'email' | 'organizationId'): boolean {

@@ -32,7 +32,7 @@ import { MockSecurityService } from './mock-security.service';
 import { MockSubscriptionsService } from './mock-subscriptions.service';
 import { MockTenantsService } from './mock-tenants.service';
 import { MockUsageService } from './mock-usage.service';
-import { MockUsersService } from './mock-users.service';
+import { UsersApiService } from '../services/users-api.service';
 
 /**
  * Single wiring point between the UI and its data layer.
@@ -42,7 +42,7 @@ import { MockUsersService } from './mock-users.service';
  */
 export const MOCK_DATA_PROVIDERS: Provider[] = [
   { provide: PlatformService, useClass: MockPlatformService },
-  { provide: UsersService, useClass: MockUsersService },
+  { provide: UsersService, useClass: UsersApiService },
   { provide: OrganizationsService, useClass: MockOrganizationsService },
   { provide: TenantsService, useClass: MockTenantsService },
   { provide: ProductsService, useClass: MockProductsService },

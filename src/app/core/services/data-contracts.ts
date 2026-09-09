@@ -24,6 +24,7 @@ import {
   PlatformEnvironment,
   PlatformRegion,
   PlatformUser,
+  UserEffectiveAccess,
   Product,
   ProvisioningRun,
   ProvisioningTemplate,
@@ -52,8 +53,15 @@ export abstract class UsersService {
   abstract all(): Observable<PlatformUser[]>;
   abstract byId(id: string): Observable<PlatformUser | undefined>;
   abstract create(payload: Partial<PlatformUser>): Observable<PlatformUser>;
+  abstract createTenantUser(
+    tenantId: string,
+    payload: { email: string; displayName: string; temporaryPassword?: string; applicationKey: string; roleKey: string },
+  ): Observable<PlatformUser>;
   abstract update(id: string, payload: Partial<PlatformUser>): Observable<PlatformUser | undefined>;
   abstract setStatus(id: string, status: PlatformUser['status']): Observable<PlatformUser | undefined>;
+  abstract resetPassword(id: string, newPassword: string): Observable<void>;
+  abstract resetMfa(id: string): Observable<void>;
+  abstract effectiveAccess(id: string, applicationKey?: string, tenantId?: string): Observable<UserEffectiveAccess>;
 }
 
 export abstract class OrganizationsService {

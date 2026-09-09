@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { CheckboxModule } from 'primeng/checkbox';
+import { AuthService } from '../../core/services/auth.service';
 import { NotificationService } from '../../core/services/notification.service';
 import { SessionService } from '../../core/services/session.service';
 
@@ -22,6 +23,7 @@ export class LoginPage {
   private readonly formBuilder = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly session = inject(SessionService);
+  private readonly auth = inject(AuthService);
   private readonly notifications = inject(NotificationService);
 
   readonly submitting = signal(false);
@@ -36,8 +38,8 @@ export class LoginPage {
   ];
 
   readonly form = this.formBuilder.nonNullable.group({
-    email: ['talha.hassan@centaiva.com', [Validators.required, Validators.email]],
-    password: ['••••••••••••', [Validators.required, Validators.minLength(6)]],
+    email: ['', [Validators.required, Validators.email]],
+    password: ['', [Validators.required, Validators.minLength(6)]],
     remember: [true],
   });
 
@@ -60,19 +62,23 @@ export class LoginPage {
     }
 
     this.submitting.set(true);
+    const { email, password, remember } = this.form.getRawValue();
 
-    // No authentication API in this phase — the shell is entered directly.
-    setTimeout(() => {
-      this.submitting.set(false);
-      this.session.signIn();
-      void this.router.navigate(['/app/overview']);
-    }, 620);
+    this.auth.login(email, password).subscribe({
+      next: (tokens) => {
+        this.session.signIn(tokens, remember);
+        this.submitting.set(false);
+        void this.router.navigate(['/app/overview']);
+      },
+      error: (error: Error) => {
+        this.submitting.set(false);
+        this.notifications.error('Sign-in failed', error.message);
+      },
+    });
   }
 
   signInWith(provider: string): void {
-    this.notifications.info(`${provider} sign-in`, 'Federated sign-in is wired up during API integration.');
-    this.session.signIn();
-    void this.router.navigate(['/app/overview']);
+    this.notifications.info('SSO not connected', `${provider} sign-in is not configured yet.`);
   }
 
   forgotPassword(event: Event): void {

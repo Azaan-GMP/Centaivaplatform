@@ -127,8 +127,9 @@
   [modal]="true"
   [draggable]="false"
   [resizable]="false"
-  [style]="{ width: '620px' }"
-  header="Create user"
+  [style]="{ width: 'min(620px, calc(100vw - 24px))', maxHeight: 'calc(100vh - 24px)' }"
+  styleClass="create-user-dialog"
+  header="Create tenant user"
 >
   <form class="form-grid" [formGroup]="form" (ngSubmit)="submitCreate()" novalidate>
     <div class="field">
@@ -157,14 +158,16 @@
     </div>
 
     <div class="field">
-      <label class="field__label" for="jobTitle">Job title</label>
-      <input id="jobTitle" class="input" formControlName="jobTitle" placeholder="Optional" />
+      <label class="field__label" for="temporaryPassword">Temporary password</label>
+      <input id="temporaryPassword" type="password" class="input" formControlName="temporaryPassword" autocomplete="new-password" placeholder="Optional" />
+      <span class="field__hint">Leave empty if the identity service will generate one.</span>
     </div>
 
     <div class="field">
-      <label class="field__label">Platform role <span class="field__req">*</span></label>
+      <label class="field__label">Tenant role <span class="field__req">*</span></label>
       <p-select
         formControlName="role"
+        appendTo="body"
         [options]="roleOptions"
         optionLabel="label"
         optionValue="value"
@@ -176,6 +179,7 @@
       <label class="field__label">Organization <span class="field__req">*</span></label>
       <p-select
         formControlName="organizationId"
+        appendTo="body"
         [options]="organizationOptions()"
         optionLabel="label"
         optionValue="value"
@@ -190,19 +194,22 @@
     </div>
 
     <div class="field">
-      <label class="field__label">Tenant</label>
+      <label class="field__label">Tenant <span class="field__req">*</span></label>
       <p-select
         formControlName="tenantId"
+        appendTo="body"
         [options]="tenantOptions()"
         optionLabel="label"
         optionValue="value"
         [filter]="true"
         filterBy="label"
-        [showClear]="true"
-        placeholder="Optional"
+        placeholder="Select a tenant"
         [style]="{ width: '100%' }"
       />
-      <span class="field__hint">Leave empty to grant organization level access only.</span>
+      <span class="field__hint">The user will be provisioned directly into this tenant.</span>
+      @if (form.controls.tenantId.invalid && form.controls.tenantId.touched) {
+        <span class="field__error"><i class="pi pi-exclamation-circle"></i> Choose a tenant.</span>
+      }
     </div>
   </form>
 
@@ -212,7 +219,7 @@
       @if (saving()) {
         <i class="pi pi-spinner" aria-hidden="true"></i> Creating…
       } @else {
-        Create user
+        Create tenant user
       }
     </button>
   </ng-template>

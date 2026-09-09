@@ -1,7 +1,9 @@
 import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { AuditEvent, PlatformUser, Role } from '../../core/models';
+import { DialogModule } from 'primeng/dialog';
+import { AuditEvent, PlatformUser, Role, UserEffectiveAccess } from '../../core/models';
 import { NotificationService } from '../../core/services/notification.service';
 import { AuditService, RolesService, UsersService } from '../../core/services/data-contracts';
 import {
@@ -24,6 +26,8 @@ import {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DatePipe,
+    ReactiveFormsModule,
+    DialogModule,
     RouterLink,
     PageHeaderComponent,
     SectionCardComponent,
@@ -45,6 +49,7 @@ export class UserDetailPage {
   private readonly audit = inject(AuditService);
   private readonly notifications = inject(NotificationService);
   private readonly router = inject(Router);
+  private readonly formBuilder = inject(FormBuilder);
 
   /** Bound from the route parameter via withComponentInputBinding(). */
   readonly id = input<string>('');
@@ -55,6 +60,22 @@ export class UserDetailPage {
   readonly allRoles = signal<Role[]>([]);
   readonly auditEvents = signal<AuditEvent[]>([]);
   readonly confirmDisableOpen = signal(false);
+  readonly editOpen = signal(false);
+  readonly resetPasswordOpen = signal(false);
+  readonly saving = signal(false);
+  readonly resetPasswordVisible = signal(false);
+  readonly effectiveAccess = signal<UserEffectiveAccess | null>(null);
+
+  readonly editForm = this.formBuilder.nonNullable.group({
+    displayName: ['', Validators.required],
+    phoneNumber: [''],
+    preferredLocale: ['en-GB'],
+    timeZoneId: ['UTC'],
+  });
+
+  readonly passwordForm = this.formBuilder.nonNullable.group({
+    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+  });
 
   readonly tabs = computed<TabItem[]>(() => {
     const user = this.user();
@@ -105,14 +126,16 @@ export class UserDetailPage {
       .filter((grant, index, all) => all.findIndex((other) => other.permissionKey === grant.permissionKey) === index),
   );
 
+  readonly effectivePermissionKeys = computed(() => this.effectiveAccess()?.permissions ?? []);
+
   readonly accessSummary = computed(() => {
     const user = this.user();
     return {
       organizations: user?.organizations.length ?? 0,
       tenants: user?.tenants.length ?? 0,
-      roles: this.assignedRoles().length,
-      permissions: this.effectivePermissions().length,
-      products: user?.productKeys.length ?? 0,
+      roles: this.effectiveAccess()?.roles.length ?? this.assignedRoles().length,
+      permissions: this.effectivePermissionKeys().length,
+      products: this.effectiveAccess()?.entitlements.length ?? user?.productKeys.length ?? 0,
     };
   });
 
@@ -126,6 +149,10 @@ export class UserDetailPage {
         this.user.set(user ?? null);
         this.loading.set(false);
       });
+      this.users.effectiveAccess(id).subscribe({
+        next: (access) => this.effectiveAccess.set(access),
+        error: () => this.effectiveAccess.set(null),
+      });
     });
 
     this.roles.all().subscribe((roles) => this.allRoles.set(roles));
@@ -136,8 +163,83 @@ export class UserDetailPage {
     void this.router.navigate(['/app/users']);
   }
 
-  action(label: string, detail: string): void {
-    this.notifications.success(label, detail);
+  openEdit(): void {
+    const user = this.user();
+    if (!user) return;
+    this.editForm.reset({
+      displayName: user.displayName,
+      phoneNumber: user.phoneNumber ?? '',
+      preferredLocale: user.locale,
+      timeZoneId: user.timeZone,
+    });
+    this.editOpen.set(true);
+  }
+
+  saveEdit(): void {
+    const user = this.user();
+    if (!user || this.editForm.invalid) return;
+    const value = this.editForm.getRawValue();
+    this.saving.set(true);
+    this.users.update(user.id, {
+      displayName: value.displayName,
+      phoneNumber: value.phoneNumber || null,
+      locale: value.preferredLocale,
+      timeZone: value.timeZoneId,
+    }).subscribe({
+      next: (updated) => {
+        if (updated) this.user.set(updated);
+        this.saving.set(false);
+        this.editOpen.set(false);
+        this.notifications.success('User updated', `${value.displayName}'s account was updated.`);
+      },
+      error: () => {
+        this.saving.set(false);
+        this.notifications.error('Update failed', 'The user could not be updated.');
+      },
+    });
+  }
+
+  openResetPassword(): void {
+    this.resetPasswordVisible.set(false);
+    this.passwordForm.reset({ newPassword: '' });
+    this.resetPasswordOpen.set(true);
+  }
+
+  toggleResetPasswordVisibility(): void {
+    this.resetPasswordVisible.update((visible) => !visible);
+  }
+
+  resetPassword(): void {
+    const user = this.user();
+    if (!user || this.passwordForm.invalid) {
+      this.passwordForm.markAllAsTouched();
+      return;
+    }
+    const value = this.passwordForm.getRawValue();
+    this.saving.set(true);
+    this.users.resetPassword(user.id, value.newPassword).subscribe({
+      next: () => {
+        this.saving.set(false);
+        this.resetPasswordOpen.set(false);
+        this.notifications.success('Password reset', `${user.displayName}'s password was reset.`);
+      },
+      error: () => {
+        this.saving.set(false);
+        this.notifications.error('Password reset failed', 'The password could not be reset.');
+      },
+    });
+  }
+
+  resetMfa(): void {
+    const user = this.user();
+    if (!user) return;
+    this.users.resetMfa(user.id).subscribe({
+      next: () => {
+        this.user.set({ ...user, mfa: 'Disabled' });
+        this.notifications.success('MFA reset', `${user.displayName} must re-enrol at the next sign in.`);
+      },
+      error: () => this.notifications.error('MFA reset failed', 'Multi-factor authentication could not be reset.'),
+    });
   }
 
   askDisable(): void {

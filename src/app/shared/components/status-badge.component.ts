@@ -10,13 +10,14 @@ import { severityForStatus } from '../status.util';
       @if (dot()) {
         <span class="badge__dot" aria-hidden="true"></span>
       }
-      {{ status() }}
+      {{ label() || status() }}
     </span>
   `,
 })
 export class StatusBadgeComponent {
   readonly status = input.required<string>();
   readonly severity = input<Severity | null>(null);
+  readonly label = input<string | null>(null);
   readonly dot = input(true);
   readonly title = input<string | null>(null);
 

@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ListQuery, PagedResult, PlatformUser } from '../models';
+import { ListQuery, PagedResult, PlatformUser, UserEffectiveAccess } from '../models';
 import { UsersService } from '../services/data-contracts';
 import { USERS } from './data/seed-users';
 import { daysAgo, queryCollection, respond } from './mock-utils';
@@ -56,6 +56,10 @@ export class MockUsersService extends UsersService {
     return respond(user);
   }
 
+  createTenantUser(_tenantId: string, payload: { email: string; displayName: string; roleKey: string }): Observable<PlatformUser> {
+    return this.create({ email: payload.email, displayName: payload.displayName, primaryRole: payload.roleKey });
+  }
+
   update(id: string, payload: Partial<PlatformUser>): Observable<PlatformUser | undefined> {
     const index = this.users.findIndex((user) => user.id === id);
     if (index === -1) {
@@ -68,5 +72,11 @@ export class MockUsersService extends UsersService {
 
   setStatus(id: string, status: PlatformUser['status']): Observable<PlatformUser | undefined> {
     return this.update(id, { status });
+  }
+
+  resetPassword(): Observable<void> { return respond(undefined); }
+  resetMfa(): Observable<void> { return respond(undefined); }
+  effectiveAccess(): Observable<UserEffectiveAccess> {
+    return respond({ roles: [], permissions: [], entitlements: [], hasApplicationAccess: false, isPlatformOwner: false, isTenantAdmin: false });
   }
 }

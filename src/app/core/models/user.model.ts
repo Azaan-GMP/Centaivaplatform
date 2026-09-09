@@ -37,6 +37,7 @@ export interface PlatformUser {
   firstName: string;
   lastName: string;
   email: string;
+  phoneNumber?: string | null;
   jobTitle: string;
   status: UserStatus;
   mfa: MfaStatus;
@@ -57,4 +58,13 @@ export interface PlatformUser {
   sessions: UserSession[];
   securityEvents: UserSecurityEvent[];
   defaultEnvironment: EnvironmentName;
+}
+
+export interface UserEffectiveAccess {
+  roles: string[];
+  permissions: string[];
+  entitlements: Array<{ key: string; value: string }>;
+  hasApplicationAccess: boolean;
+  isPlatformOwner: boolean;
+  isTenantAdmin: boolean;
 }

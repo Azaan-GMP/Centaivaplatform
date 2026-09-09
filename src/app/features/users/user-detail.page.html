@@ -15,15 +15,15 @@
       [crumbs]="[{ label: 'Users', link: '/app/users' }, { label: u.displayName }]"
     >
       <div slot="actions" class="btn-group">
-        <button type="button" class="btn" (click)="action('Edit user', 'The edit form opens during API integration.')">
+        <button type="button" class="btn" (click)="openEdit()">
           <i class="pi pi-pencil" aria-hidden="true"></i>
           Edit
         </button>
-        <button type="button" class="btn" (click)="action('Password reset sent', 'A reset link was queued for ' + u.email + '.')">
+        <button type="button" class="btn" (click)="openResetPassword()">
           <i class="pi pi-key" aria-hidden="true"></i>
           Reset Password
         </button>
-        <button type="button" class="btn" (click)="action('MFA reset', u.displayName + ' must re-enrol at the next sign in.')">
+        <button type="button" class="btn" (click)="resetMfa()">
           <i class="pi pi-mobile" aria-hidden="true"></i>
           Reset MFA
         </button>
@@ -41,7 +41,12 @@
         <div class="identity__row">
           <h2 class="identity__name">{{ u.displayName }}</h2>
           <ctv-status-badge [status]="u.status" />
-          <ctv-status-badge [status]="u.mfa" [dot]="false" [title]="'Multi-factor authentication: ' + u.mfa" />
+          <ctv-status-badge
+            [status]="u.mfa"
+            [label]="'MFA ' + u.mfa"
+            [dot]="false"
+            [title]="'Multi-factor authentication: ' + u.mfa"
+          />
         </div>
         <p class="identity__email">{{ u.email }}</p>
         <p class="identity__meta">
@@ -106,10 +111,10 @@
             <div class="permission-preview">
               <span class="eyebrow">Highest risk permissions</span>
               <div class="perm-chips">
-                @for (grant of effectivePermissions().slice(0, 10); track grant.permissionKey) {
-                  <span class="chip chip--code">{{ grant.permissionKey }}</span>
+                @for (permission of effectivePermissionKeys().slice(0, 10); track permission) {
+                  <span class="chip chip--code">{{ permission }}</span>
                 }
-                @if (effectivePermissions().length === 0) {
+                @if (effectivePermissionKeys().length === 0) {
                   <span class="u-dim">No permissions resolved for this user.</span>
                 }
               </div>
@@ -409,6 +414,63 @@
       }
     }
   </div>
+
+  <p-dialog [(visible)]="editOpen" [modal]="true" [draggable]="false" header="Edit user" [style]="{ width: '520px' }">
+    <form class="detail-form" [formGroup]="editForm" (ngSubmit)="saveEdit()">
+      <div class="field">
+        <label class="field__label" for="editDisplayName">Display name</label>
+        <input id="editDisplayName" class="input" formControlName="displayName" />
+      </div>
+      <div class="field">
+        <label class="field__label" for="editPhone">Phone number</label>
+        <input id="editPhone" class="input" formControlName="phoneNumber" />
+      </div>
+      <div class="detail-form__columns">
+        <div class="field">
+          <label class="field__label" for="editLocale">Preferred locale</label>
+          <input id="editLocale" class="input" formControlName="preferredLocale" />
+        </div>
+        <div class="field">
+          <label class="field__label" for="editTimeZone">Time zone</label>
+          <input id="editTimeZone" class="input" formControlName="timeZoneId" />
+        </div>
+      </div>
+    </form>
+    <ng-template #footer>
+      <button type="button" class="btn" (click)="editOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn--primary" [disabled]="saving() || editForm.invalid" (click)="saveEdit()">Save changes</button>
+    </ng-template>
+  </p-dialog>
+
+  <p-dialog [(visible)]="resetPasswordOpen" [modal]="true" [draggable]="false" header="Reset password" [style]="{ width: '520px' }">
+    <form class="detail-form" [formGroup]="passwordForm" (ngSubmit)="resetPassword()">
+      <div class="field">
+        <label class="field__label" for="newPassword">Temporary password</label>
+        <div class="detail-password">
+          <input
+            id="newPassword"
+            [type]="resetPasswordVisible() ? 'text' : 'password'"
+            class="input"
+            formControlName="newPassword"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="detail-password__toggle"
+            [attr.aria-label]="resetPasswordVisible() ? 'Hide password' : 'Show password'"
+            (click)="toggleResetPasswordVisibility()"
+          >
+            <i class="pi" [class.pi-eye]="!resetPasswordVisible()" [class.pi-eye-slash]="resetPasswordVisible()" aria-hidden="true"></i>
+          </button>
+        </div>
+        <span class="field__hint">Must contain at least 8 characters.</span>
+      </div>
+    </form>
+    <ng-template #footer>
+      <button type="button" class="btn" (click)="resetPasswordOpen.set(false)">Cancel</button>
+      <button type="button" class="btn btn--primary" [disabled]="saving() || passwordForm.invalid" (click)="resetPassword()">Reset password</button>
+    </ng-template>
+  </p-dialog>
 
   <ctv-confirm-dialog
     [(visible)]="confirmDisableOpen"

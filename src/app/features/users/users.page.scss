@@ -65,3 +65,17 @@
   color: var(--text-secondary);
   font-size: 9px;
 }
+
+:host ::ng-deep .create-user-dialog .p-dialog-content {
+  overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+  :host ::ng-deep .create-user-dialog .form-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :host ::ng-deep .create-user-dialog .form-grid__full {
+    grid-column: auto;
+  }
+}
